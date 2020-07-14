@@ -40,99 +40,89 @@ static int rb[] =
   { IDC_SOURCE_NETINST, IDC_SOURCE_DOWNLOAD, IDC_SOURCE_LOCALDIR, 0 };
 
 static void
-load_dialog (HWND h)
+load_dialog(HWND h)
 {
-  rbset (h, rb, source);
+  rbset(h, rb, g_source);
 }
 
 static void
-save_dialog (HWND h)
+save_dialog(HWND h)
 {
-  source = rbget (h, rb);
+  g_source = rbget(h, rb);
   /* We mustn't construct any packagedb objects until after the root
      directory has been selected, but setting the static data member
      that records the mode we're running in is fine here (and conversely,
      would be A Bad Thing if we did it again after the first time we
      construct a packagedb object; see package_db.h for details).  */
-  packagedb::task = 
-    source == IDC_SOURCE_DOWNLOAD ? PackageDB_Download : PackageDB_Install;
+  packagedb::task =
+      g_source == IDC_SOURCE_DOWNLOAD ? PackageDB_Download : PackageDB_Install;
 }
 
 static BOOL
-dialog_cmd (HWND h, int id, HWND hwndctl, UINT code)
+dialog_cmd(HWND h, int id, HWND hwndctl, UINT code)
 {
   switch (id)
-    {
+  {
+  case IDC_SOURCE_DOWNLOAD:
+  case IDC_SOURCE_NETINST:
+  case IDC_SOURCE_LOCALDIR:
+    save_dialog(h);
+    break;
 
-    case IDC_SOURCE_DOWNLOAD:
-    case IDC_SOURCE_NETINST:
-    case IDC_SOURCE_LOCALDIR:
-      save_dialog (h);
-      break;
-
-    default:
-      break;
-    }
+  default:
+    break;
+  }
   return 0;
 }
 
-bool
-SourcePage::Create ()
+bool SourcePage::Create()
 {
-  return PropertyPage::Create (NULL, dialog_cmd, IDD_SOURCE);
+  return PropertyPage::Create(NULL, dialog_cmd, IDD_SOURCE);
 }
 
-void
-SourcePage::OnActivate ()
+void SourcePage::OnActivate()
 {
   if (DownloadOption && LocalOption)
-    source = IDC_SOURCE_NETINST;
+    g_source = IDC_SOURCE_NETINST;
   else if (DownloadOption)
-    source = IDC_SOURCE_DOWNLOAD;
+    g_source = IDC_SOURCE_DOWNLOAD;
   else if (LocalOption)
-    source = IDC_SOURCE_LOCALDIR;
-  else if (!source)
+    g_source = IDC_SOURCE_LOCALDIR;
+  else if (!g_source)
     //only default to IDC_SOURCE_NETINST if
     //source not already set:
-    source = IDC_SOURCE_NETINST;
+    //g_source = IDC_SOURCE_NETINST;
+    g_source = IDC_SOURCE_LOCALDIR;
 
-  load_dialog (GetHWND ());
+  load_dialog(GetHWND());
   // Check to see if any radio buttons are selected. If not, select a default.
-  if (SendMessage (GetDlgItem (IDC_SOURCE_DOWNLOAD), BM_GETCHECK, 0, 0)
-      != BST_CHECKED
-      && SendMessage (GetDlgItem (IDC_SOURCE_LOCALDIR), BM_GETCHECK, 0, 0)
-	 != BST_CHECKED)
-    SendMessage (GetDlgItem (IDC_SOURCE_NETINST), BM_SETCHECK,
-		 BST_CHECKED, 0);
+  if (SendMessage(GetDlgItem(IDC_SOURCE_DOWNLOAD), BM_GETCHECK, 0, 0) != BST_CHECKED && SendMessage(GetDlgItem(IDC_SOURCE_LOCALDIR), BM_GETCHECK, 0, 0) != BST_CHECKED)
+    SendMessage(GetDlgItem(IDC_SOURCE_NETINST), BM_SETCHECK,
+                BST_CHECKED, 0);
 }
 
-long
-SourcePage::OnNext ()
+long SourcePage::OnNext()
 {
-  HWND h = GetHWND ();
+  HWND h = GetHWND();
 
-  save_dialog (h);
+  save_dialog(h);
   return 0;
 }
 
-long
-SourcePage::OnBack ()
+long SourcePage::OnBack()
 {
-  save_dialog (GetHWND ());
+  save_dialog(GetHWND());
   return 0;
 }
 
-void
-SourcePage::OnDeactivate ()
+void SourcePage::OnDeactivate()
 {
-  Log (LOG_PLAIN) << "source: "
-    << ((source == IDC_SOURCE_DOWNLOAD) ? "download" :
-        (source == IDC_SOURCE_NETINST) ? "network install" : "from local dir")
-    << endLog;
+  Log(LOG_PLAIN) << "source: "
+                 << ((g_source == IDC_SOURCE_DOWNLOAD) ? "download" : (g_source == IDC_SOURCE_NETINST) ? "network install" : "from local dir")
+                 << endLog;
 }
 
-long
-SourcePage::OnUnattended ()
+long SourcePage::OnUnattended()
 {
   return OnNext();
 }

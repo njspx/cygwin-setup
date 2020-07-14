@@ -261,7 +261,7 @@ ChooserPage::OnInit ()
       SendMessage(viewlist, CB_ADDSTRING, 0, (LPARAM)PickView::mode_caption((PickView::views)view));
     }
 
-  if (source == IDC_SOURCE_DOWNLOAD)
+  if (g_source == IDC_SOURCE_DOWNLOAD)
     setPrompt("Select packages to download ");
   else
     setPrompt("Select packages to install ");
@@ -335,7 +335,7 @@ ChooserPage::OnActivate()
   packagedb::categoriesType::iterator it = db.categories.find("All");
   if (it == db.categories.end ())
     listview->setEmptyText("No packages found.");
-  if (source == IDC_SOURCE_DOWNLOAD)
+  if (g_source == IDC_SOURCE_DOWNLOAD)
     listview->setEmptyText("Nothing to download.");
   else
     listview->setEmptyText("Nothing to install or update.");
@@ -389,7 +389,7 @@ ChooserPage::OnBack ()
 {
   PlaceDialog (false);
 
-  if (source == IDC_SOURCE_LOCALDIR)
+  if (g_source == IDC_SOURCE_LOCALDIR)
     return IDD_LOCAL_DIR;
   else
     return IDD_SITE;

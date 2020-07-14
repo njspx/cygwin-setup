@@ -20,7 +20,7 @@
 enum attend_mode unattended_mode = attended;
 bool rebootneeded;
 
-int source;
+int g_source;
 
 std::string local_dir;
 

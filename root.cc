@@ -277,7 +277,7 @@ RootPage::OnActivate ()
 bool
 RootPage::wantsActivation() const
 {
-  return (source != IDC_SOURCE_DOWNLOAD);
+  return (g_source != IDC_SOURCE_DOWNLOAD);
 }
 
 long

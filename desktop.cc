@@ -248,7 +248,7 @@ static char *message_string = NULL;
 static void
 load_dialog (HWND h)
 {
-  if (source == IDC_SOURCE_DOWNLOAD)
+  if (g_source == IDC_SOURCE_DOWNLOAD)
     {
       // Don't need the checkboxes
       EnableWindow (GetDlgItem (h, IDC_ROOT_DESKTOP), FALSE);
@@ -353,7 +353,7 @@ DesktopSetupPage::OnInit ()
 void
 DesktopSetupPage::OnActivate ()
 {
-  if (NoShortcutsOption || source == IDC_SOURCE_DOWNLOAD) 
+  if (NoShortcutsOption || g_source == IDC_SOURCE_DOWNLOAD) 
     {
       root_desktop = root_menu = 0;
     }
@@ -396,7 +396,7 @@ DesktopSetupPage::OnFinish ()
 {
   HWND h = GetHWND ();
   save_dialog (h);
-  if (source != IDC_SOURCE_DOWNLOAD)
+  if (g_source != IDC_SOURCE_DOWNLOAD)
     do_desktop_setup ();
 
   return true;

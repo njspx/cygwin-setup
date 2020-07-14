@@ -744,7 +744,7 @@ packagemeta::scan (const packageversion &pkg, bool mirror_mode)
   try
     {
       if (!check_for_cached (*(pkg.source ()), NULL, mirror_mode, false)
-          && ::source == IDC_SOURCE_LOCALDIR)
+          && ::g_source == IDC_SOURCE_LOCALDIR)
         return false;
     }
   catch (Exception * e)

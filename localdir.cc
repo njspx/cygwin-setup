@@ -68,7 +68,7 @@ void
 LocalDirSetting::save ()
 {
   UserSettings::instance().set ("last-cache", local_dir);
-  if (source == IDC_SOURCE_DOWNLOAD || !get_root_dir ().size())
+  if (g_source == IDC_SOURCE_DOWNLOAD || !get_root_dir ().size())
     {
       const char *sep = isdirsep (local_dir[local_dir.size () - 1]) ? "" : "\\";
       Logger ().clearFiles();
@@ -95,7 +95,7 @@ static void
 load_dialog (HWND h)
 {
   char descText[1000];
-  if (source != IDC_SOURCE_LOCALDIR)
+  if (g_source != IDC_SOURCE_LOCALDIR)
     {
       LoadString (hinstance, IDS_LOCAL_DIR_DOWNLOAD, descText, sizeof (descText));
     }
@@ -189,10 +189,10 @@ browse (HWND h)
   memset (&bi, 0, sizeof (bi));
   bi.hwndOwner = h;
   bi.pszDisplayName = name;
-  bi.lpszTitle = (source != IDC_SOURCE_LOCALDIR) ? "Select download directory"
+  bi.lpszTitle = (g_source != IDC_SOURCE_LOCALDIR) ? "Select download directory"
 					    : "Select local package directory";
   bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE
-	      | ((source != IDC_SOURCE_LOCALDIR) ? (BIF_EDITBOX | BIF_VALIDATE)
+	      | ((g_source != IDC_SOURCE_LOCALDIR) ? (BIF_EDITBOX | BIF_VALIDATE)
 						 : 0);
   bi.lpfn = browse_cb;
   pidl = SHBrowseForFolder (&bi);
@@ -264,7 +264,7 @@ LocalDirPage::OnNext ()
       DWORD attr = GetFileAttributesW (wlocal);
       if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY))
 	{
-	  if (source == IDC_SOURCE_LOCALDIR)
+	  if (g_source == IDC_SOURCE_LOCALDIR)
 	    {
 	      do_from_local_dir (GetInstance (), GetHWND (), local_dir);
 	      Progress.SetActivateTask (WM_APP_START_SETUP_INI_DOWNLOAD);
@@ -275,7 +275,7 @@ LocalDirPage::OnNext ()
 	       && (GetLastError () == ERROR_FILE_NOT_FOUND
 		   || GetLastError () == ERROR_PATH_NOT_FOUND))
 	{
-	  if (source == IDC_SOURCE_LOCALDIR)
+	  if (g_source == IDC_SOURCE_LOCALDIR)
 	   {
 	   if (!unattended_mode)
 	    {

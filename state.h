@@ -35,7 +35,7 @@ enum attend_mode { attended = 0, unattended, chooseronly };
 extern enum attend_mode unattended_mode;
 extern bool rebootneeded;
 
-extern int source;
+extern int g_source;
 
 extern std::string local_dir;
 

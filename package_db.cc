@@ -768,7 +768,7 @@ packagedb::prep()
 
   /* XXX: this needs to be broken out somewhere where it can do progress
      reporting, as it can take a long time... */
-  if (source == IDC_SOURCE_DOWNLOAD || source ==IDC_SOURCE_LOCALDIR)
+  if (g_source == IDC_SOURCE_DOWNLOAD || g_source ==IDC_SOURCE_LOCALDIR)
     packagemeta::ScanDownloadedFiles (MirrorOption);
 
   setExistence ();

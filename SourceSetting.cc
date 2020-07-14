@@ -20,33 +20,32 @@
 #include "resource.h"
 #include "String++.h"
 
-SourceSetting::SourceSetting ()
+SourceSetting::SourceSetting()
 {
   const char *fg_ret;
-  if ((fg_ret = UserSettings::instance().get ("last-action")))
-    source = sourceFromString(fg_ret);
+  if ((fg_ret = UserSettings::instance().get("last-action")))
+    g_source = sourceFromString(fg_ret);
 }
 
-SourceSetting::~SourceSetting ()
+SourceSetting::~SourceSetting()
 {
-  switch (source)
-    {
-    case IDC_SOURCE_DOWNLOAD:
-      UserSettings::instance().set ("last-action", "Download");
-      break;
-    case IDC_SOURCE_NETINST:
-      UserSettings::instance().set ("last-action", "Download,Install");
-      break;
-    case IDC_SOURCE_LOCALDIR:
-      UserSettings::instance().set ("last-action", "Install");
-      break;
-    default:
-      break;
-    }
+  switch (g_source)
+  {
+  case IDC_SOURCE_DOWNLOAD:
+    UserSettings::instance().set("last-action", "Download");
+    break;
+  case IDC_SOURCE_NETINST:
+    UserSettings::instance().set("last-action", "Download,Install");
+    break;
+  case IDC_SOURCE_LOCALDIR:
+    UserSettings::instance().set("last-action", "Install");
+    break;
+  default:
+    break;
+  }
 }
 
-int
-SourceSetting::sourceFromString(const std::string& aSource)
+int SourceSetting::sourceFromString(const std::string &aSource)
 {
   if (!casecompare(aSource, "Download"))
     return IDC_SOURCE_DOWNLOAD;

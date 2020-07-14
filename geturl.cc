@@ -106,7 +106,7 @@ progress (int bytes)
 static void
 getUrlToStream (const std::string &_url, io_stream *output)
 {
-  is_local_install = (source == IDC_SOURCE_LOCALDIR);
+  is_local_install = (g_source == IDC_SOURCE_LOCALDIR);
   init_dialog (_url, 0);
   NetIO *n = NetIO::open (_url.c_str(), true);
   if (!n || !n->ok ())

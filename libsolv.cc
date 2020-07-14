@@ -296,8 +296,8 @@ SolvableVersion::accessible () const
   // (This assumes that packagemeta::ScanDownloadedFiles() has already been
   // called to check for presence in the package cache, which would have removed
   // the version if not available, unless it is already installed)
-  if (::source == IDC_SOURCE_LOCALDIR)
-    return source ()->Cached ();
+  if (::g_source == IDC_SOURCE_LOCALDIR)
+    return source()->Cached();
 
   // Otherwise, package is (presumably) retrievable
   return true;

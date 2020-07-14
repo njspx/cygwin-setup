@@ -271,107 +271,107 @@ query_download_errors (HINSTANCE h, HWND owner)
 }
 
 static int
-do_download_thread (HINSTANCE h, HWND owner)
+do_download_thread(HINSTANCE h, HWND owner)
 {
   int errors = 0;
   total_download_bytes = 0;
   total_download_bytes_sofar = 0;
-  download_failures.clear ();
+  download_failures.clear();
 
-  Progress.SetText1 ("Checking for packages to download...");
-  Progress.SetText2 ("");
-  Progress.SetText3 ("");
+  Progress.SetText1("Checking for packages to download...");
+  Progress.SetText2("");
+  Progress.SetText3("");
 
   packagedb db;
   const SolverTransactionList &t = db.solution.transactions();
 
   /* calculate the total size of the download */
-  for (SolverTransactionList::const_iterator i = t.begin (); i != t.end (); ++i)
-    {
-      if (i->type != SolverTransaction::transInstall)
-        continue;
-      packageversion version = i->version;
+  for (SolverTransactionList::const_iterator i = t.begin(); i != t.end(); ++i)
+  {
+    if (i->type != SolverTransaction::transInstall)
+      continue;
+    packageversion version = i->version;
 
-      try
-        {
-          if (!check_for_cached (*version.source(), owner))
-            total_download_bytes += version.source()->size;
-        }
-      catch (Exception * e)
-        {
-          // We know what to do with these..
-          if (e->errNo() == APPERR_CORRUPT_PACKAGE)
-            fatal (owner, IDS_CORRUPT_PACKAGE, version.Name().c_str());
-          // Unexpected exception.
-          throw e;
-        }
+    try
+    {
+      if (!check_for_cached(*version.source(), owner))
+        total_download_bytes += version.source()->size;
     }
+    catch (Exception *e)
+    {
+      // We know what to do with these..
+      if (e->errNo() == APPERR_CORRUPT_PACKAGE)
+        fatal(owner, IDS_CORRUPT_PACKAGE, version.Name().c_str());
+      // Unexpected exception.
+      throw e;
+    }
+  }
 
   /* and do the download. FIXME: This here we assign a new name for the cached version
    * and check that above.
    */
-  for (SolverTransactionList::const_iterator i = t.begin (); i != t.end (); ++i)
-    {
-      if (i->type != SolverTransaction::transInstall)
-        continue;
-      packageversion version = i->version;
+  for (SolverTransactionList::const_iterator i = t.begin(); i != t.end(); ++i)
+  {
+    if (i->type != SolverTransaction::transInstall)
+      continue;
+    packageversion version = i->version;
 
-	{
-	  int e = 0;
-          e += download_one (*version.source(), owner);
-	  errors += e;
-	  if (e)
-	    download_failures.push_back (version);
+    {
+      int e = 0;
+      e += download_one(*version.source(), owner);
+      errors += e;
+      if (e)
+        download_failures.push_back(version);
 #if 0
 	  if (e)
 	    pkg->action = ACTION_ERROR;
 #endif
-	}
     }
+  }
 
   if (errors)
+  {
+    // In unattended mode we retry the download, but not forever.
+    static int retries = 5;
+    int rc;
+    if (unattended_mode && --retries <= 0)
     {
-      // In unattended mode we retry the download, but not forever.
-      static int retries = 5;
-      int rc;
-      if (unattended_mode && --retries <= 0)
-        {
-	  Log (LOG_PLAIN) << "download error in unattended_mode: out of retries" << endLog;
-	  rc = IDABORT;
-	}
-      else if (unattended_mode)
-        {
-	  Log (LOG_PLAIN) << "download error in unattended_mode: " << retries
-	    << (retries > 1 ? " retries" : " retry") << " remaining." << endLog;
-	  rc = IDRETRY;
-	}
-      else
-	rc = query_download_errors (h, owner);
-      switch (rc)
-	{
-	case IDRETRY:
-	  Progress.SetActivateTask (WM_APP_START_DOWNLOAD);
-	  return IDD_INSTATUS;
-	case IDC_BACK:
-	  return IDD_CHOOSE;
-	case IDABORT:
-	  Logger ().setExitMsg (IDS_DOWNLOAD_INCOMPLETE_EXIT);
-	  Logger ().exit (1);
-	case IDIGNORE:
-	  break;
-	default:
-	  break;
-	}
+      Log(LOG_PLAIN) << "download error in unattended_mode: out of retries" << endLog;
+      rc = IDABORT;
     }
+    else if (unattended_mode)
+    {
+      Log(LOG_PLAIN) << "download error in unattended_mode: " << retries
+                     << (retries > 1 ? " retries" : " retry") << " remaining." << endLog;
+      rc = IDRETRY;
+    }
+    else
+      rc = query_download_errors(h, owner);
+    switch (rc)
+    {
+    case IDRETRY:
+      Progress.SetActivateTask(WM_APP_START_DOWNLOAD);
+      return IDD_INSTATUS;
+    case IDC_BACK:
+      return IDD_CHOOSE;
+    case IDABORT:
+      Logger().setExitMsg(IDS_DOWNLOAD_INCOMPLETE_EXIT);
+      Logger().exit(1);
+    case IDIGNORE:
+      break;
+    default:
+      break;
+    }
+  }
 
-  if (source == IDC_SOURCE_DOWNLOAD)
-    {
-      if (errors)
-	Logger ().setExitMsg (IDS_DOWNLOAD_INCOMPLETE_EXIT);
-      else if (!unattended_mode)
-	Logger ().setExitMsg (IDS_DOWNLOAD_COMPLETE);
-      return IDD_DESKTOP;
-    }
+  if (g_source == IDC_SOURCE_DOWNLOAD)
+  {
+    if (errors)
+      Logger().setExitMsg(IDS_DOWNLOAD_INCOMPLETE_EXIT);
+    else if (!unattended_mode)
+      Logger().setExitMsg(IDS_DOWNLOAD_COMPLETE);
+    return IDD_DESKTOP;
+  }
   else
     return IDD_S_INSTALL;
 }

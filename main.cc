@@ -117,7 +117,7 @@ ThreeBarProgressPage Progress;
 PostInstallResultsPage PostInstallResults;
 
 static inline void
-main_display ()
+main_display()
 {
   /* nondisplay classes */
   LocalDirSetting localDir;
@@ -139,75 +139,76 @@ main_display ()
   DesktopSetupPage Desktop;
   PropSheet MainWindow;
 
-  Log (LOG_TIMESTAMP) << "Current Directory: " << local_dir << endLog;
+  Log(LOG_TIMESTAMP) << "Current Directory: " << local_dir << endLog;
 
   // Initialize common controls
-  INITCOMMONCONTROLSEX icce = { sizeof (INITCOMMONCONTROLSEX),
-				ICC_WIN95_CLASSES | ICC_LISTVIEW_CLASSES };
-  InitCommonControlsEx (&icce);
+  INITCOMMONCONTROLSEX icce = {sizeof(INITCOMMONCONTROLSEX),
+                               ICC_WIN95_CLASSES | ICC_LISTVIEW_CLASSES};
+  InitCommonControlsEx(&icce);
 
   // Initialize COM and ShellLink instance here.  For some reason
   // Windows 7 fails to create the ShellLink instance if this is
   // done later, in the thread which actually creates the shortcuts.
   extern IShellLink *sl;
-  CoInitializeEx (NULL, COINIT_APARTMENTTHREADED);
-  HRESULT res = CoCreateInstance (CLSID_ShellLink, NULL,
-				  CLSCTX_INPROC_SERVER, IID_IShellLink,
-				  (LPVOID *) & sl);
+  CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+  HRESULT res = CoCreateInstance(CLSID_ShellLink, NULL,
+                                 CLSCTX_INPROC_SERVER, IID_IShellLink,
+                                 (LPVOID *)&sl);
   if (res)
-    {
-      char buf[256];
-      sprintf (buf, "CoCreateInstance failed with error 0x%x.\n"
-		    "Setup will not be able to create Cygwin Icons\n"
-		    "in the Start Menu or on the Desktop.", (int) res);
-      mbox (NULL, buf, "Cygwin Setup", MB_OK);
-    }
+  {
+    char buf[256];
+    sprintf(buf, "CoCreateInstance failed with error 0x%x.\n"
+                 "Setup will not be able to create Cygwin Icons\n"
+                 "in the Start Menu or on the Desktop.",
+            (int)res);
+    mbox(NULL, buf, "Cygwin Setup", MB_OK);
+  }
 
   // Init window class lib
-  Window::SetAppInstance (hinstance);
+  Window::SetAppInstance(hinstance);
 
   // Create pages
-  Splash.Create ();
-  AntiVirus.Create ();
-  Source.Create ();
-  Root.Create ();
-  LocalDir.Create ();
-  Net.Create ();
-  Site.Create ();
-  Chooser.Create ();
-  Prereq.Create ();
-  Confirm.Create ();
-  Progress.Create ();
-  PostInstallResults.Create ();
-  Desktop.Create ();
+  Splash.Create();
+  AntiVirus.Create();
+  Source.Create();
+  Root.Create();
+  LocalDir.Create();
+  Net.Create();
+  Site.Create();
+  Chooser.Create();
+  Prereq.Create();
+  Confirm.Create();
+  Progress.Create();
+  PostInstallResults.Create();
+  Desktop.Create();
 
   // Add pages to sheet
-  MainWindow.AddPage (&Splash);
-  MainWindow.AddPage (&AntiVirus);
-  MainWindow.AddPage (&Source);
-  MainWindow.AddPage (&Root);
-  MainWindow.AddPage (&LocalDir);
-  MainWindow.AddPage (&Net);
-  MainWindow.AddPage (&Site);
-  MainWindow.AddPage (&Chooser);
-  MainWindow.AddPage (&Prereq);
-  MainWindow.AddPage (&Confirm);
-  MainWindow.AddPage (&Progress);
-  MainWindow.AddPage (&PostInstallResults);
-  MainWindow.AddPage (&Desktop);
+  MainWindow.AddPage(&Splash);
+  MainWindow.AddPage(&AntiVirus);
+  MainWindow.AddPage(&Source);
+  MainWindow.AddPage(&Root);
+  MainWindow.AddPage(&LocalDir);
+  MainWindow.AddPage(&Net);
+  MainWindow.AddPage(&Site);
+  MainWindow.AddPage(&Chooser);
+  MainWindow.AddPage(&Prereq);
+  MainWindow.AddPage(&Confirm);
+  MainWindow.AddPage(&Progress);
+  MainWindow.AddPage(&PostInstallResults);
+  MainWindow.AddPage(&Desktop);
 
   // Create the PropSheet main window
-  MainWindow.Create ();
+  MainWindow.Create();
 
   // Uninitalize COM
   if (sl)
-    sl->Release ();
-  CoUninitialize ();
+    sl->Release();
+  CoUninitialize();
 }
 
 int WINAPI
-WinMain (HINSTANCE h,
-	 HINSTANCE hPrevInstance, LPSTR command_line, int cmd_show)
+WinMain(HINSTANCE h,
+        HINSTANCE hPrevInstance, LPSTR command_line, int cmd_show)
 {
 
   hinstance = h;
@@ -223,148 +224,151 @@ WinMain (HINSTANCE h,
     ++argc;
   _argv = __argv;
 
-  try {
+  try
+  {
     bool help_option = false;
     bool invalid_option = false;
     char cwd[MAX_PATH];
-    GetCurrentDirectory (MAX_PATH, cwd);
-    local_dir = std::string (cwd);
+    GetCurrentDirectory(MAX_PATH, cwd);
+    local_dir = std::string(cwd);
 
-    if (!GetOption::GetInstance ().Process (argc,_argv, NULL))
+    if (!GetOption::GetInstance().Process(argc, _argv, NULL))
       help_option = invalid_option = true;
     else if (HelpOption)
       help_option = true;
 
-    if (!((std::string) Arch).size ())
-      {
+    if (!((std::string)Arch).size())
+    {
 #ifdef __x86_64__
-	is_64bit = true;
-#else
-	is_64bit = false;
-#endif
-      }
-    else if (((std::string) Arch).find ("64") != std::string::npos)
       is_64bit = true;
-    else if (((std::string) Arch).find ("32") != std::string::npos
-	     || ((std::string) Arch).find ("x86") != std::string::npos)
+#else
+      is_64bit = false;
+#endif
+    }
+    else if (((std::string)Arch).find("64") != std::string::npos)
+      is_64bit = true;
+    else if (((std::string)Arch).find("32") != std::string::npos || ((std::string)Arch).find("x86") != std::string::npos)
       is_64bit = false;
     else
-      {
-	char buff[80 + ((std::string) Arch).size ()];
-	sprintf (buff, "Invalid option for --arch:  \"%s\"",
-		 ((std::string) Arch).c_str ());
-	fprintf (stderr, "*** %s\n", buff);
-	mbox (NULL, buff, "Invalid option", MB_ICONEXCLAMATION | MB_OK);
-	exit (1);
-      }
+    {
+      char buff[80 + ((std::string)Arch).size()];
+      sprintf(buff, "Invalid option for --arch:  \"%s\"",
+              ((std::string)Arch).c_str());
+      fprintf(stderr, "*** %s\n", buff);
+      mbox(NULL, buff, "Invalid option", MB_ICONEXCLAMATION | MB_OK);
+      exit(1);
+    }
 
     unattended_mode = PackageManagerOption ? chooseronly
-			: (UnattendedOption ? unattended : attended);
+                                           : (UnattendedOption ? unattended : attended);
 
     bool output_only = help_option || VersionOption;
 
     SetupBaseName = SetupBaseNameOpt;
     SetupArch = is_64bit ? "x86_64" : "x86";
-    SetupIniDir = SetupArch+"/";
+    SetupIniDir = SetupArch + "/";
 
     /* Initialize well known SIDs.  We need the admin SID to test if we're
        supposed to elevate. */
-    nt_sec.initialiseWellKnownSIDs ();
+    nt_sec.initialiseWellKnownSIDs();
     /* Check if we have to elevate. */
-    bool elevate = !output_only && OSMajorVersion () >= 6
-		   && !NoAdminOption && !nt_sec.isRunAsAdmin ();
+    bool elevate = !output_only && OSMajorVersion() >= 6 && !NoAdminOption && !nt_sec.isRunAsAdmin();
 
     if (unattended_mode || output_only || !elevate)
-      set_cout ();
+      set_cout();
 
     /* Start logging only if we don't elevate.  Same for setting default
        security settings. */
-    LogSingleton::SetInstance (*LogFile::createLogFile ());
-    const char *sep = isdirsep (local_dir[local_dir.size () - 1])
-				? "" : "\\";
+    LogSingleton::SetInstance(*LogFile::createLogFile());
+    const char *sep = isdirsep(local_dir[local_dir.size() - 1])
+                          ? ""
+                          : "\\";
     /* Don't create log files for help or version output only. */
     if (!elevate && !output_only)
-      {
-	Logger ().setFile (LOG_BABBLE, local_dir + sep + "setup.log.full",
-			   false);
-	Logger ().setFile (0, local_dir + sep + "setup.log", true);
-	Log (LOG_PLAIN) << "Starting cygwin install, version "
-			<< setup_version << endLog;
-      }
+    {
+      Logger().setFile(LOG_BABBLE, local_dir + sep + "setup.log.full",
+                       false);
+      Logger().setFile(0, local_dir + sep + "setup.log", true);
+      Log(LOG_PLAIN) << "Starting cygwin install, version "
+                     << setup_version << endLog;
+    }
 
     if (help_option)
-      {
-	if (invalid_option)
-	  Log (LOG_PLAIN) << "\nError during option processing.\n" << endLog;
-        Log (LOG_PLAIN) << "Cygwin setup " << setup_version << endLog;
-	Log (LOG_PLAIN) << "\nCommand Line Options:\n" << endLog;
-	GetOption::GetInstance ().ParameterUsage (Log (LOG_PLAIN));
-	Log (LOG_PLAIN) << endLog;
-	Log (LOG_PLAIN) << "The default is to both download and install packages, unless either --download or --local-install is specified." << endLog;
-	Logger ().exit (invalid_option ? 1 : 0, false);
-	goto finish_up;
-      }
+    {
+      if (invalid_option)
+        Log(LOG_PLAIN) << "\nError during option processing.\n"
+                       << endLog;
+      Log(LOG_PLAIN) << "Cygwin setup " << setup_version << endLog;
+      Log(LOG_PLAIN) << "\nCommand Line Options:\n"
+                     << endLog;
+      GetOption::GetInstance().ParameterUsage(Log(LOG_PLAIN));
+      Log(LOG_PLAIN) << endLog;
+      Log(LOG_PLAIN) << "The default is to both download and install packages, unless either --download or --local-install is specified." << endLog;
+      Logger().exit(invalid_option ? 1 : 0, false);
+      goto finish_up;
+    }
 
     if (VersionOption)
-      {
-        Log (LOG_PLAIN) << "Cygwin setup " << setup_version << endLog;
-        Logger ().exit (0, false);
-        goto finish_up;
-      }
+    {
+      Log(LOG_PLAIN) << "Cygwin setup " << setup_version << endLog;
+      Logger().exit(0, false);
+      goto finish_up;
+    }
 
     /* Check if Cygwin works on this Windows version */
-    if (!UnsupportedOption && (OSMajorVersion () < 6))
-      {
-	mbox (NULL, "Cygwin is not supported on this Windows version",
-	      "Cygwin Setup", MB_ICONEXCLAMATION | MB_OK);
-	Logger ().exit (1, false);
-      }
+    if (!UnsupportedOption && (OSMajorVersion() < 6))
+    {
+      mbox(NULL, "Cygwin is not supported on this Windows version",
+           "Cygwin Setup", MB_ICONEXCLAMATION | MB_OK);
+      Logger().exit(1, false);
+    }
 
     if (elevate)
+    {
+      char exe_path[MAX_PATH];
+      if (!GetModuleFileName(NULL, exe_path, ARRAYSIZE(exe_path)))
+        goto finish_up;
+
+      SHELLEXECUTEINFO sei = {sizeof(sei)};
+      sei.lpVerb = "runas";
+      sei.lpFile = exe_path;
+      sei.nShow = SW_NORMAL;
+      if (WaitOption)
+        sei.fMask |= SEE_MASK_NOCLOSEPROCESS;
+
+      // Avoid another isRunAsAdmin check in the child.
+      std::string command_line_cs(command_line);
+      command_line_cs += " -";
+      command_line_cs += NoAdminOption.shortOption();
+      sei.lpParameters = command_line_cs.c_str();
+
+      if (ShellExecuteEx(&sei))
       {
-	char exe_path[MAX_PATH];
-	if (!GetModuleFileName(NULL, exe_path, ARRAYSIZE(exe_path)))
-	  goto finish_up;
-
-	SHELLEXECUTEINFO sei = { sizeof(sei) };
-	sei.lpVerb = "runas";
-	sei.lpFile = exe_path;
-	sei.nShow = SW_NORMAL;
-	if (WaitOption)
-	  sei.fMask |= SEE_MASK_NOCLOSEPROCESS;
-
-	// Avoid another isRunAsAdmin check in the child.
-	std::string command_line_cs (command_line);
-	command_line_cs += " -";
-	command_line_cs += NoAdminOption.shortOption();
-	sei.lpParameters = command_line_cs.c_str ();
-
-	if (ShellExecuteEx(&sei))
-	  {
-	    DWORD exitcode = 0;
-	    /* Wait until child process is finished. */
-	    if (WaitOption && sei.hProcess != NULL)
-	      if (!WaitForSingleObject (sei.hProcess, INFINITE))
-	        GetExitCodeProcess (sei.hProcess, &exitcode);
-	    Logger ().setExitMsg (IDS_ELEVATED);
-	    Logger ().exit (exitcode, false);
-	  }
-	Log (LOG_PLAIN) << "Starting elevated child process failed" << endLog;
-	Logger ().exit (1, false);
+        DWORD exitcode = 0;
+        /* Wait until child process is finished. */
+        if (WaitOption && sei.hProcess != NULL)
+          if (!WaitForSingleObject(sei.hProcess, INFINITE))
+            GetExitCodeProcess(sei.hProcess, &exitcode);
+        Logger().setExitMsg(IDS_ELEVATED);
+        Logger().exit(exitcode, false);
       }
+      Log(LOG_PLAIN) << "Starting elevated child process failed" << endLog;
+      Logger().exit(1, false);
+    }
     else
-      {
-	/* Set default DACL and Group. */
-	nt_sec.setDefaultSecurity ((root_scope == IDC_ROOT_SYSTEM));
+    {
+      /* Set default DACL and Group. */
+      nt_sec.setDefaultSecurity((root_scope == IDC_ROOT_SYSTEM));
 
-	UserSettings Settings;
-        UserSettings::instance().load (local_dir);
-	main_display ();
-	Settings.save ();	// Clean exit.. save user options.
-	if (rebootneeded)
-	  Logger ().setExitMsg (IDS_REBOOT_REQUIRED);
-	Logger ().exit (rebootneeded ? IDS_REBOOT_REQUIRED : 0);
-      }
+      UserSettings Settings;
+      UserSettings::instance().load(local_dir);
+      main_display();
+      Settings.save(); // Clean exit.. save user options.
+      if (rebootneeded)
+        Logger().setExitMsg(IDS_REBOOT_REQUIRED);
+      Logger().exit(rebootneeded ? IDS_REBOOT_REQUIRED : 0);
+    }
+
 finish_up:
     ;
   }

@@ -17,75 +17,74 @@
 
 BoolOption::BoolOption(bool const defaultvalue, char shortopt,
                        char const *longopt, std::string const &shorthelp,
-                       BoolOptionType type, OptionSet &owner) :
-  _value (defaultvalue), _ovalue (defaultvalue), _shortopt(shortopt),
-  _longopt (longopt), _shorthelp (shorthelp), _type(type)
+                       BoolOptionType type, OptionSet &owner) : _value(defaultvalue), _ovalue(defaultvalue), _shortopt(shortopt),
+                                                                _longopt(longopt), _shorthelp(shorthelp), _type(type)
 {
-  owner.Register (this);
+  owner.Register(this);
 };
 
 BoolOption::~ BoolOption () {};
 
 std::string const
-BoolOption::shortOption () const
+BoolOption::shortOption() const
 {
   return std::string() + _shortopt;
 }
 
 std::string const
-BoolOption::longOption () const
+BoolOption::longOption() const
 {
   return _longopt;
 }
 
 std::vector<std::string> const &
-BoolOption::longOptionPrefixes () const
+BoolOption::longOptionPrefixes() const
 {
   switch (_type)
-    {
-    default:
-    case BoolOption::BoolOptionType::simple:
-      static std::vector<std::string> simple = {""};
-      return simple;
-    case BoolOption::BoolOptionType::pairedAble:
-      static std::vector<std::string> able = {"enable-", "disable-"};
-      return able;
-    case BoolOption::BoolOptionType::pairedNo:
-      static std::vector<std::string> no = {"", "no-"};
-      return no;
-    }
+  {
+  default:
+  case BoolOption::BoolOptionType::simple:
+    static std::vector<std::string> simple = {""};
+    return simple;
+  case BoolOption::BoolOptionType::pairedAble:
+    static std::vector<std::string> able = {"enable-", "disable-"};
+    return able;
+  case BoolOption::BoolOptionType::pairedNo:
+    static std::vector<std::string> no = {"", "no-"};
+    return no;
+  }
 }
 
 std::string const
-BoolOption::shortHelp () const
+BoolOption::shortHelp() const
 {
   return _shorthelp;
 }
 
 Option::Result
-BoolOption::Process (char const *, int prefixIndex)
+BoolOption::Process(char const *, int prefixIndex)
 {
   switch (_type)
-    {
-    default:
-    case BoolOption::BoolOptionType::simple:
-      _value = !_ovalue;
-    case BoolOption::BoolOptionType::pairedAble:
-      _value = (prefixIndex == 0);
-    case BoolOption::BoolOptionType::pairedNo:
-      _value = (prefixIndex == 0);
-    }
+  {
+  default:
+  case BoolOption::BoolOptionType::simple:
+    _value = !_ovalue;
+  case BoolOption::BoolOptionType::pairedAble:
+    _value = (prefixIndex == 0);
+  case BoolOption::BoolOptionType::pairedNo:
+    _value = (prefixIndex == 0);
+  }
 
   return Ok;
 }
 
-BoolOption::operator bool () const
+BoolOption::operator bool() const
 {
   return _value;
 }
 
 Option::Argument
-BoolOption::argument () const
+BoolOption::argument() const
 {
-    return None;
+  return None;
 }

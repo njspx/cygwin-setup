@@ -61,7 +61,7 @@ ConfirmPage::OnActivate()
   const SolverTransactionList & trans = db.solution.transactions ();
 
   // first list things we will erase
-  if (source != IDC_SOURCE_DOWNLOAD)
+  if (g_source != IDC_SOURCE_DOWNLOAD)
     {
       std::vector<std::string> erase;
       for (SolverTransactionList::const_iterator i = trans.begin ();
@@ -100,7 +100,7 @@ ConfirmPage::OnActivate()
       if (i->type == SolverTransaction::transInstall)
           {
             std::string line;
-            if (source != IDC_SOURCE_DOWNLOAD)
+            if (g_source != IDC_SOURCE_DOWNLOAD)
               line += "Install ";
             else
               line += "Download ";
@@ -140,7 +140,7 @@ ConfirmPage::OnNext ()
 long
 ConfirmPage::whatNext ()
 {
-  if (source == IDC_SOURCE_LOCALDIR)
+  if (g_source == IDC_SOURCE_LOCALDIR)
     {
       // Next, install
       Progress.SetActivateTask (WM_APP_START_INSTALL);
