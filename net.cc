@@ -33,7 +33,7 @@
 #include "propsheet.h"
 #include "threebar.h"
 #include "ConnectionSetting.h"
-extern ThreeBarProgressPage Progress;
+extern ThreeBarProgressPage g_Progress;
 
 static StringOption ProxyOption ("", 'p', "proxy", "HTTP/FTP proxy (host:port)", false);
 
@@ -142,7 +142,7 @@ NetPage::OnNext ()
 
   Log (LOG_PLAIN) << "net: " << NetIO::net_method_name()  << endLog;
 
-  Progress.SetActivateTask (WM_APP_START_SITE_INFO_DOWNLOAD);
+  g_Progress.SetActivateTask (WM_APP_START_SITE_INFO_DOWNLOAD);
   return IDD_INSTATUS;
 }
 

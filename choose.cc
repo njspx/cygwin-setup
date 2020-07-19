@@ -64,7 +64,7 @@ static BoolOption CleanOrphansOption (false, 'o', "delete-orphans", "Remove orph
 static BoolOption ForceCurrentOption (false, 'f', "force-current", "Select the current version for all packages");
 static BoolOption PruneInstallOption (false, 'Y', "prune-install", "Prune the installation to only the requested packages");
 
-extern ThreeBarProgressPage Progress;
+extern ThreeBarProgressPage g_Progress;
 
 HWND ChooserPage::ins_dialog;
 
@@ -89,44 +89,39 @@ ChooserPage::ChooserPage () :
   cmd_show_set (false), saved_geom (false), saw_geom_change (false),
   timer_id (DEFAULT_TIMER_ID), activated (false)
 {
-  sizeProcessor.AddControlInfo (ChooserControlsInfo);
+  sizeProcessor.AddControlInfo(ChooserControlsInfo);
 
-  const char *fg_ret =
-    UserSettings::instance().get ("chooser_window_settings");
-  if (!fg_ret)
-    return;
+  const char *fg_ret = UserSettings::instance().get("chooser_window_settings");
+  if (!fg_ret) return;
 
   writer buf;
   UINT *py = buf.wpi;
-  char *buf_copy = strdup (fg_ret);
-  for (char *p = strtok (buf_copy, ","); p; p = strtok (NULL, ","))
-    *py++ = atoi (p);
-  free (buf_copy);
-  if ((py - buf.wpi) == (sizeof (buf.wpi) / sizeof (buf.wpi[0])))
-    {
-      saved_geom = true;
-      window_placement = buf.wp;
-    }
+  char *buf_copy = strdup(fg_ret);
+  for (char *p = strtok(buf_copy, ","); p; p = strtok(NULL, ","))
+    *py++ = atoi(p);
+  free(buf_copy);
+  if ((py - buf.wpi) == (sizeof(buf.wpi) / sizeof(buf.wpi[0]))) {
+    saved_geom = true;
+    window_placement = buf.wp;
+  }
 }
 
 ChooserPage::~ChooserPage ()
 {
-  if (saw_geom_change)
-    {
-      writer buf;
-      buf.wp = window_placement;
-      std::string toset;
-      const char *comma = "";
-      for (unsigned i = 0; i < (sizeof (buf.wpi) / sizeof (buf.wpi[0])); i++)
-	{
-	  char intbuf[33];
-	  sprintf (intbuf, "%u", buf.wpi[i]);
-	  toset += comma;
-	  toset += intbuf;
-	  comma = ",";
-	}
-      UserSettings::instance().set ("chooser_window_settings", toset);
+  if (saw_geom_change) {
+    writer buf;
+    buf.wp = window_placement;
+    std::string toset;
+    const char *comma = "";
+    for (unsigned i = 0; i < (sizeof(buf.wpi) / sizeof(buf.wpi[0])); i++) {
+      char intbuf[33];
+      sprintf(intbuf, "%u", buf.wpi[i]);
+      toset += comma;
+      toset += intbuf;
+      comma = ",";
     }
+    UserSettings::instance().set("chooser_window_settings", toset);
+  }
 }
 
 static ListView::Header pkg_headers[] = {
@@ -140,47 +135,47 @@ static ListView::Header pkg_headers[] = {
   {0}
 };
 
-void
-ChooserPage::createListview ()
+void ChooserPage::createListview() 
 {
-  SetBusy ();
+  SetBusy();
 
   listview = new ListView();
-  listview->init(GetHWND (), IDC_CHOOSE_LIST, pkg_headers);
+  listview->init(GetHWND(), IDC_CHOOSE_LIST, pkg_headers);
 
   chooser = new PickView();
   chooser->init(PickView::views::Category, listview, this);
-  chooser->setViewMode (!is_new_install || UpgradeAlsoOption || hasManualSelections ?
-                        PickView::views::PackagePending : PickView::views::Category);
+  // chooser->init(!is_new_install || UpgradeAlsoOption || hasManualSelections ||
+  //                       g_source == IDC_SOURCE_LOCALDIR
+  //                   ? PickView::views::PackagePending
+  //                   : PickView::views::Category,
+  //               listview, this);
+  chooser->setViewMode(!is_new_install || UpgradeAlsoOption || hasManualSelections ||
+                        g_source == IDC_SOURCE_LOCALDIR
+                    ? PickView::views::PackagePending
+                    : PickView::views::Category);
 
-  SendMessage (GetDlgItem (IDC_CHOOSE_VIEW), CB_SETCURSEL, (WPARAM)chooser->getViewMode(), 0);
+  SendMessage(GetDlgItem(IDC_CHOOSE_VIEW), CB_SETCURSEL, (WPARAM)chooser->getViewMode(), 0);
 
-  ClearBusy ();
+  ClearBusy();
 }
 
-void
-ChooserPage::initialUpdateState()
+void ChooserPage::initialUpdateState() 
 {
   // set the initial update state
-  if (ForceCurrentOption)
-    {
-      update_mode_id = IDC_CHOOSE_SYNC;
-      changeTrust(update_mode_id, false, true);
-    }
-  else if (hasManualSelections && !UpgradeAlsoOption)
-    {
-      // if packages are added or removed on the command-line and --upgrade-also
-      // isn't used, we keep the current versions of everything else
-      update_mode_id = IDC_CHOOSE_KEEP;
-    }
-  else
-    {
-      update_mode_id = IDC_CHOOSE_BEST;
-      changeTrust (update_mode_id, false, true);
-    }
+  if (ForceCurrentOption) {
+    update_mode_id = IDC_CHOOSE_SYNC;
+    changeTrust(update_mode_id, false, true);
+  } else if (hasManualSelections && !UpgradeAlsoOption) {
+    // if packages are added or removed on the command-line and --upgrade-also
+    // isn't used, we keep the current versions of everything else
+    update_mode_id = IDC_CHOOSE_KEEP;
+  } else {
+    update_mode_id = IDC_CHOOSE_BEST;
+    changeTrust(update_mode_id, false, true);
+  }
 
-  static int ta[] = { IDC_CHOOSE_KEEP, IDC_CHOOSE_BEST, IDC_CHOOSE_SYNC, 0 };
-  rbset (GetHWND (), ta, update_mode_id);
+  static int ta[] = {IDC_CHOOSE_KEEP, IDC_CHOOSE_BEST, IDC_CHOOSE_SYNC, 0};
+  rbset(GetHWND(), ta, update_mode_id);
 }
 
 /* TODO: review ::overrides for possible consolidation */
@@ -201,37 +196,31 @@ ChooserPage::getParentRect (HWND parent, HWND child, RECT * r)
   r->bottom = p.y;
 }
 
-void
-ChooserPage::PlaceDialog (bool doit)
+void ChooserPage::PlaceDialog(bool doit) 
 {
   if (unattended_mode == unattended)
     /* Don't jump up and down in (fully) unattended mode */;
-  else if (doit)
-    {
-      pre_chooser_placement.length = sizeof pre_chooser_placement;
-      GetWindowPlacement (ins_dialog, &pre_chooser_placement);
-      if (saved_geom)
-	SetWindowPlacement (ins_dialog, &window_placement);
-      else
-	{
-	  ShowWindow (ins_dialog, SW_MAXIMIZE);
-	  window_placement.length = sizeof window_placement;
-	  GetWindowPlacement (ins_dialog, &window_placement);
-	}
-      cmd_show_set = true;
+  else if (doit) {
+    pre_chooser_placement.length = sizeof pre_chooser_placement;
+    GetWindowPlacement(ins_dialog, &pre_chooser_placement);
+    if (saved_geom)
+      SetWindowPlacement(ins_dialog, &window_placement);
+    else {
+      ShowWindow(ins_dialog, SW_MAXIMIZE);
+      window_placement.length = sizeof window_placement;
+      GetWindowPlacement(ins_dialog, &window_placement);
     }
-  else if (cmd_show_set)
-    {
-      WINDOWPLACEMENT wp;
-      wp.length = sizeof wp;
-      if (GetWindowPlacement (ins_dialog, &wp)
-	  && memcmp (&wp, &window_placement, sizeof (wp)) != 0)
-	saw_geom_change = true;
-      SetWindowPlacement (ins_dialog, &pre_chooser_placement);
-      if (saw_geom_change)
-	window_placement = wp;
-      cmd_show_set = false;
-    }
+    cmd_show_set = true;
+  } else if (cmd_show_set) {
+    WINDOWPLACEMENT wp;
+    wp.length = sizeof wp;
+    if (GetWindowPlacement(ins_dialog, &wp) &&
+        memcmp(&wp, &window_placement, sizeof(wp)) != 0)
+      saw_geom_change = true;
+    SetWindowPlacement(ins_dialog, &pre_chooser_placement);
+    if (saw_geom_change) window_placement = wp;
+    cmd_show_set = false;
+  }
 }
 
 bool
@@ -281,60 +270,63 @@ ChooserPage::OnInit ()
                (WPARAM) GetDlgItem (IDC_CHOOSE_SEARCH_EDIT), TRUE);
 }
 
-void
-ChooserPage::applyCommandLinePackageSelection()
+void ChooserPage::applyCommandLinePackageSelection() 
 {
   packagedb db;
-  for (packagedb::packagecollection::iterator i = db.packages.begin ();
-       i != db.packages.end (); ++i)
-    {
-      packagemeta &pkg = *(i->second);
-      bool wanted    = pkg.isManuallyWanted();
-      bool deleted   = pkg.isManuallyDeleted();
-      bool base      = pkg.categories.find ("Base") != pkg.categories.end ();
-      bool orphaned  = pkg.categories.find ("Orphaned") != pkg.categories.end ();
-      bool upgrade   = wanted || (!pkg.installed && base);
-      bool install   = wanted  && !deleted && !pkg.installed;
-      bool reinstall = (wanted  || base) && deleted;
-      bool uninstall = (!(wanted  || base) && (deleted || PruneInstallOption))
-		     || (orphaned && CleanOrphansOption);
-      if (install)
-        pkg.set_action (packagemeta::Install_action, UpgradeAlsoOption ? packageversion () : pkg.curr, true);
-      else if (reinstall)
-	pkg.set_action (packagemeta::Reinstall_action, pkg.curr);
-      else if (uninstall)
-	pkg.set_action (packagemeta::Uninstall_action, packageversion ());
-      else if (PruneInstallOption)
-	pkg.set_action (packagemeta::NoChange_action, pkg.curr);
-      else if (upgrade)
-	pkg.set_action (packagemeta::Install_action, pkg.trustp(true, TRUST_UNKNOWN));
-      else
-	pkg.set_action (packagemeta::NoChange_action, pkg.installed);
-    }
+  for (packagedb::packagecollection::iterator i = db.packages.begin();
+       i != db.packages.end(); ++i) {
+    packagemeta &pkg = *(i->second);
+    bool wanted = (g_source == IDC_SOURCE_LOCALDIR) ? true : pkg.isManuallyWanted();
+    bool deleted = pkg.isManuallyDeleted();
+    bool base = pkg.categories.find("Base") != pkg.categories.end();
+    bool orphaned = pkg.categories.find("Orphaned") != pkg.categories.end();
+    bool upgrade = wanted || (!pkg.installed && base);
+    bool install = wanted && !deleted && !pkg.installed;
+    bool reinstall = (wanted || base) && deleted;
+    bool uninstall = (!(wanted || base) && (deleted || PruneInstallOption)) ||
+                     (orphaned && CleanOrphansOption);
+
+    // Log(LOG_PLAIN) << "pkg: " << pkg.SDesc() << "wanted:" << wanted
+    //                << ", deleted:" << deleted
+    //                << (pkg.installed ? ", installed" : ", not install")
+    //                << endLog;
+
+    if (install)
+      pkg.set_action(packagemeta::Install_action,
+                     UpgradeAlsoOption ? packageversion() : pkg.curr, true);
+    else if (reinstall)
+      pkg.set_action(packagemeta::Reinstall_action, pkg.curr);
+    else if (uninstall)
+      pkg.set_action(packagemeta::Uninstall_action, packageversion());
+    else if (PruneInstallOption)
+      pkg.set_action(packagemeta::NoChange_action, pkg.curr);
+    else if (upgrade)
+      pkg.set_action(packagemeta::Install_action,
+                     pkg.trustp(true, TRUST_UNKNOWN));
+    else
+      pkg.set_action(packagemeta::NoChange_action, pkg.installed);
+  }
 }
 
-void
-ChooserPage::OnActivate()
+void ChooserPage::OnActivate() 
 {
   SetBusy();
 
   packagedb db;
   db.prep();
 
-  if (!activated)
-    {
-      // Do things which should only happen once, but rely on packagedb being
-      // ready to use, so OnInit() is too early
-      db.noChanges();
-      applyCommandLinePackageSelection();
-      initialUpdateState();
+  if (!activated) {
+    // Do things which should only happen once, but rely on packagedb being
+    // ready to use, so OnInit() is too early
+    db.noChanges();
+    applyCommandLinePackageSelection();
+    initialUpdateState();
 
-      activated = true;
-    }
+    activated = true;
+  }
 
   packagedb::categoriesType::iterator it = db.categories.find("All");
-  if (it == db.categories.end ())
-    listview->setEmptyText("No packages found.");
+  if (it == db.categories.end()) listview->setEmptyText("No packages found.");
   if (g_source == IDC_SOURCE_DOWNLOAD)
     listview->setEmptyText("Nothing to download.");
   else
@@ -346,7 +338,7 @@ ChooserPage::OnActivate()
   ClearBusy();
 
   chooser->refresh();
-  PlaceDialog (true);
+  PlaceDialog(true);
 }
 
 long
@@ -379,7 +371,7 @@ ChooserPage::OnNext ()
 #endif
 
   PlaceDialog (false);
-  Progress.SetActivateTask (WM_APP_PREREQ_CHECK);
+  g_Progress.SetActivateTask (WM_APP_PREREQ_CHECK);
 
   return IDD_INSTATUS;
 }

@@ -21,7 +21,7 @@ class io_stream;
 #include <vector>
 
 typedef std::vector <std::string> IniList;
-extern IniList found_ini_list, setup_ext_list;
+extern IniList g_found_ini_list, g_setup_ext_list;
 const std::string setup_exts[] = { "zst", "xz", "bz2", "ini" };
 extern bool is_64bit;
 extern bool is_new_install;

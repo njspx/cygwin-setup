@@ -18,7 +18,7 @@
 #include "state.h"
 
 enum attend_mode unattended_mode = attended;
-bool rebootneeded;
+bool g_rebootneeded;
 
 int g_source;
 

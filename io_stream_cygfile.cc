@@ -29,29 +29,37 @@
 
 
 /* completely private iostream registration class */
-class CygFileProvider : public IOStreamProvider
+class CygFileProvider : public IOStreamProvider 
 {
 public:
-  int exists (const std::string& path) const
-    {return io_stream_cygfile::exists(path);}
-  int remove (const std::string& path) const
-    {return io_stream_cygfile::remove(path);}
-  int mklink (const std::string& a , const std::string& b, io_stream_link_t c) const
-    {return io_stream_cygfile::mklink(a,b,c);}
-  io_stream *open (const std::string& a,const std::string& b, mode_t m) const
-    {return new io_stream_cygfile (a, b, m);}
-  ~CygFileProvider (){}
-  int move (const std::string& a,const std::string& b) const
-    {return io_stream_cygfile::move (a, b);}
-  int mkdir_p (path_type_t isadir, const std::string& path, mode_t mode) const
-    {return cygmkdir_p (isadir, path, mode);}
+  int exists(const std::string& path) const {
+    return io_stream_cygfile::exists(path);
+  }
+  int remove(const std::string& path) const {
+    return io_stream_cygfile::remove(path);
+  }
+  int mklink(const std::string& a, const std::string& b,
+             io_stream_link_t c) const {
+    return io_stream_cygfile::mklink(a, b, c);
+  }
+  io_stream* open(const std::string& a, const std::string& b, mode_t m) const {
+    return new io_stream_cygfile(a, b, m);
+  }
+  ~CygFileProvider() {}
+  int move(const std::string& a, const std::string& b) const {
+    return io_stream_cygfile::move(a, b);
+  }
+  int mkdir_p(path_type_t isadir, const std::string& path, mode_t mode) const {
+    return cygmkdir_p(isadir, path, mode);
+  }
+
 protected:
-  CygFileProvider() // no creating this
-    {
-      io_stream::registerProvider (theInstance, "cygfile://");
-    }
-  CygFileProvider(CygFileProvider const &); // no copying
-  CygFileProvider &operator=(CygFileProvider const &); // no assignment
+  CygFileProvider()  // no creating this
+  {
+    io_stream::registerProvider(theInstance, "cygfile://");
+  }
+  CygFileProvider(CygFileProvider const&);             // no copying
+  CygFileProvider& operator=(CygFileProvider const&);  // no assignment
 private:
   static CygFileProvider theInstance;
 };
@@ -165,19 +173,16 @@ io_stream_cygfile::~io_stream_cygfile ()
 }
 
 /* Static members */
-int
-io_stream_cygfile::exists (const std::string& path)
+int io_stream_cygfile::exists(const std::string& path) 
 {
-  get_root_dir_now ();
-  if (!get_root_dir ().size())
-    return 0;
+  get_root_dir_now();
+  if (!get_root_dir().size()) return 0;
 
-  size_t len = cygpath (normalise(path)).size () + 7;
+  size_t len = cygpath(normalise(path)).size() + 7;
   WCHAR wname[len];
-  mklongpath (wname, cygpath (normalise(path)).c_str (), len);
-  DWORD attr = GetFileAttributesW (wname);
-  if (attr != INVALID_FILE_ATTRIBUTES)
-    return 1;
+  mklongpath(wname, cygpath(normalise(path)).c_str(), len);
+  DWORD attr = GetFileAttributesW(wname);
+  if (attr != INVALID_FILE_ATTRIBUTES) return 1;
   return 0;
 }
 

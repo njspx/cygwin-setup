@@ -208,8 +208,7 @@ ListView::resizeColumns(void)
     }
 }
 
-void
-ListView::setContents(ListViewContents *_contents, bool tree)
+void ListView::setContents(ListViewContents *_contents, bool tree)
 {
   contents = _contents;
 
@@ -229,27 +228,25 @@ ListView::setContents(ListViewContents *_contents, bool tree)
     ListView_SetImageList(hWndListView, hEmptyImgList, LVSIL_SMALL);
 
   size_t i;
-  for (i = 0; i < contents->size();  i++)
-    {
-      LVITEM lvi;
-      lvi.mask = LVIF_TEXT | (tree ? LVIF_IMAGE | LVIF_INDENT : 0);
-      lvi.iItem = i;
-      lvi.iSubItem = 0;
-      lvi.pszText = LPSTR_TEXTCALLBACK;
-      if (tree)
-        {
-          lvi.iImage = I_IMAGECALLBACK;
-          lvi.iIndent = (*contents)[i]->get_indent();
-        }
-
-      ListView_InsertItem(hWndListView, &lvi);
+  for (i = 0; i < contents->size(); i++) {
+    LVITEM lvi;
+    lvi.mask = LVIF_TEXT | (tree ? LVIF_IMAGE | LVIF_INDENT : 0);
+    lvi.iItem = i;
+    lvi.iSubItem = 0;
+    lvi.pszText = LPSTR_TEXTCALLBACK;
+    if (tree) {
+      lvi.iImage = I_IMAGECALLBACK;
+      lvi.iIndent = (*contents)[i]->get_indent();
     }
 
-  if (iRow >= 0)
-    {
-      ListView_SetItemState(hWndListView, iRow, LVNI_SELECTED | LVNI_FOCUSED, LVNI_SELECTED | LVNI_FOCUSED);
-      ListView_EnsureVisible(hWndListView, iRow, false);
-    }
+    ListView_InsertItem(hWndListView, &lvi);
+  }
+
+  if (iRow >= 0) {
+    ListView_SetItemState(hWndListView, iRow, LVNI_SELECTED | LVNI_FOCUSED,
+                          LVNI_SELECTED | LVNI_FOCUSED);
+    ListView_EnsureVisible(hWndListView, iRow, false);
+  }
 
   // enable redrawing of ListView and redraw
   SendMessage(hWndListView, WM_SETREDRAW, TRUE, 0);

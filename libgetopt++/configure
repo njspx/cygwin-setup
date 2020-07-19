@@ -17370,7 +17370,12 @@ do
     "include/autoconf.h") CONFIG_HEADERS="$CONFIG_HEADERS include/autoconf.h" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
-    "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "\
+") CONFIG_FILES="$CONFIG_FILES \
+" ;;
+    "Makefile
+") CONFIG_FILES="$CONFIG_FILES Makefile
+" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

@@ -304,13 +304,11 @@ Script::run() const
   return retval;
 }
 
-int
-try_run_script (const std::string& dir,
-                const std::string& fname,
-                const std::string& ext)
+int try_run_script(const std::string &dir, const std::string &fname,
+                   const std::string &ext) 
 {
-  if (io_stream::exists ("cygfile://" + dir + fname + ext))
-    return Script (dir + fname + ext).run ();
+  if (io_stream::exists("cygfile://" + dir + fname + ext))
+    return Script(dir + fname + ext).run();
   return NO_ERROR;
 }
 

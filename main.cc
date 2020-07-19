@@ -113,11 +113,10 @@ set_cout ()
 }
 
 // Other threads talk to these pages, so we need to have it externable.
-ThreeBarProgressPage Progress;
-PostInstallResultsPage PostInstallResults;
+ThreeBarProgressPage g_Progress;
+PostInstallResultsPage g_PostInstallResults;
 
-static inline void
-main_display()
+static inline void main_display()
 {
   /* nondisplay classes */
   LocalDirSetting localDir;
@@ -178,8 +177,8 @@ main_display()
   Chooser.Create();
   Prereq.Create();
   Confirm.Create();
-  Progress.Create();
-  PostInstallResults.Create();
+  g_Progress.Create();
+  g_PostInstallResults.Create();
   Desktop.Create();
 
   // Add pages to sheet
@@ -193,8 +192,8 @@ main_display()
   MainWindow.AddPage(&Chooser);
   MainWindow.AddPage(&Prereq);
   MainWindow.AddPage(&Confirm);
-  MainWindow.AddPage(&Progress);
-  MainWindow.AddPage(&PostInstallResults);
+  MainWindow.AddPage(&g_Progress);
+  MainWindow.AddPage(&g_PostInstallResults);
   MainWindow.AddPage(&Desktop);
 
   // Create the PropSheet main window
@@ -206,11 +205,9 @@ main_display()
   CoUninitialize();
 }
 
-int WINAPI
-WinMain(HINSTANCE h,
-        HINSTANCE hPrevInstance, LPSTR command_line, int cmd_show)
+int WINAPI WinMain(HINSTANCE h, HINSTANCE hPrevInstance, LPSTR command_line,
+                   int cmd_show) 
 {
-
   hinstance = h;
 
   // Make sure the C runtime functions use the same codepage as the GUI
@@ -220,12 +217,10 @@ WinMain(HINSTANCE h,
 
   char **_argv;
   int argc;
-  for (argc = 0, _argv = __argv; *_argv; _argv++)
-    ++argc;
+  for (argc = 0, _argv = __argv; *_argv; _argv++) ++argc;
   _argv = __argv;
 
-  try
-  {
+  try {
     bool help_option = false;
     bool invalid_option = false;
     char cwd[MAX_PATH];
@@ -237,20 +232,18 @@ WinMain(HINSTANCE h,
     else if (HelpOption)
       help_option = true;
 
-    if (!((std::string)Arch).size())
-    {
+    if (!((std::string)Arch).size()) {
 #ifdef __x86_64__
       is_64bit = true;
 #else
       is_64bit = false;
 #endif
-    }
-    else if (((std::string)Arch).find("64") != std::string::npos)
+    } else if (((std::string)Arch).find("64") != std::string::npos)
       is_64bit = true;
-    else if (((std::string)Arch).find("32") != std::string::npos || ((std::string)Arch).find("x86") != std::string::npos)
+    else if (((std::string)Arch).find("32") != std::string::npos ||
+             ((std::string)Arch).find("x86") != std::string::npos)
       is_64bit = false;
-    else
-    {
+    else {
       char buff[80 + ((std::string)Arch).size()];
       sprintf(buff, "Invalid option for --arch:  \"%s\"",
               ((std::string)Arch).c_str());
@@ -259,8 +252,9 @@ WinMain(HINSTANCE h,
       exit(1);
     }
 
-    unattended_mode = PackageManagerOption ? chooseronly
-                                           : (UnattendedOption ? unattended : attended);
+    unattended_mode = PackageManagerOption
+                          ? chooseronly
+                          : (UnattendedOption ? unattended : attended);
 
     bool output_only = help_option || VersionOption;
 
@@ -272,59 +266,52 @@ WinMain(HINSTANCE h,
        supposed to elevate. */
     nt_sec.initialiseWellKnownSIDs();
     /* Check if we have to elevate. */
-    bool elevate = !output_only && OSMajorVersion() >= 6 && !NoAdminOption && !nt_sec.isRunAsAdmin();
+    bool elevate = !output_only && OSMajorVersion() >= 6 && !NoAdminOption &&
+                   !nt_sec.isRunAsAdmin();
 
-    if (unattended_mode || output_only || !elevate)
-      set_cout();
+    if (unattended_mode || output_only || !elevate) set_cout();
 
     /* Start logging only if we don't elevate.  Same for setting default
        security settings. */
     LogSingleton::SetInstance(*LogFile::createLogFile());
-    const char *sep = isdirsep(local_dir[local_dir.size() - 1])
-                          ? ""
-                          : "\\";
+    const char *sep = isdirsep(local_dir[local_dir.size() - 1]) ? "" : "\\";
     /* Don't create log files for help or version output only. */
-    if (!elevate && !output_only)
-    {
-      Logger().setFile(LOG_BABBLE, local_dir + sep + "setup.log.full",
-                       false);
+    if (!elevate && !output_only) {
+      Logger().setFile(LOG_BABBLE, local_dir + sep + "setup.log.full", false);
       Logger().setFile(0, local_dir + sep + "setup.log", true);
-      Log(LOG_PLAIN) << "Starting cygwin install, version "
-                     << setup_version << endLog;
+      Log(LOG_PLAIN) << "Starting cygwin install, version " << setup_version
+                     << endLog;
     }
 
-    if (help_option)
-    {
+    if (help_option) {
       if (invalid_option)
-        Log(LOG_PLAIN) << "\nError during option processing.\n"
-                       << endLog;
+        Log(LOG_PLAIN) << "\nError during option processing.\n" << endLog;
       Log(LOG_PLAIN) << "Cygwin setup " << setup_version << endLog;
-      Log(LOG_PLAIN) << "\nCommand Line Options:\n"
-                     << endLog;
+      Log(LOG_PLAIN) << "\nCommand Line Options:\n" << endLog;
       GetOption::GetInstance().ParameterUsage(Log(LOG_PLAIN));
       Log(LOG_PLAIN) << endLog;
-      Log(LOG_PLAIN) << "The default is to both download and install packages, unless either --download or --local-install is specified." << endLog;
+      Log(LOG_PLAIN)
+          << "The default is to both download and install packages, unless "
+             "either --download or --local-install is specified."
+          << endLog;
       Logger().exit(invalid_option ? 1 : 0, false);
       goto finish_up;
     }
 
-    if (VersionOption)
-    {
+    if (VersionOption) {
       Log(LOG_PLAIN) << "Cygwin setup " << setup_version << endLog;
       Logger().exit(0, false);
       goto finish_up;
     }
 
     /* Check if Cygwin works on this Windows version */
-    if (!UnsupportedOption && (OSMajorVersion() < 6))
-    {
+    if (!UnsupportedOption && (OSMajorVersion() < 6)) {
       mbox(NULL, "Cygwin is not supported on this Windows version",
            "Cygwin Setup", MB_ICONEXCLAMATION | MB_OK);
       Logger().exit(1, false);
     }
 
-    if (elevate)
-    {
+    if (elevate) {
       char exe_path[MAX_PATH];
       if (!GetModuleFileName(NULL, exe_path, ARRAYSIZE(exe_path)))
         goto finish_up;
@@ -333,8 +320,7 @@ WinMain(HINSTANCE h,
       sei.lpVerb = "runas";
       sei.lpFile = exe_path;
       sei.nShow = SW_NORMAL;
-      if (WaitOption)
-        sei.fMask |= SEE_MASK_NOCLOSEPROCESS;
+      if (WaitOption) sei.fMask |= SEE_MASK_NOCLOSEPROCESS;
 
       // Avoid another isRunAsAdmin check in the child.
       std::string command_line_cs(command_line);
@@ -342,8 +328,7 @@ WinMain(HINSTANCE h,
       command_line_cs += NoAdminOption.shortOption();
       sei.lpParameters = command_line_cs.c_str();
 
-      if (ShellExecuteEx(&sei))
-      {
+      if (ShellExecuteEx(&sei)) {
         DWORD exitcode = 0;
         /* Wait until child process is finished. */
         if (WaitOption && sei.hProcess != NULL)
@@ -354,23 +339,19 @@ WinMain(HINSTANCE h,
       }
       Log(LOG_PLAIN) << "Starting elevated child process failed" << endLog;
       Logger().exit(1, false);
-    }
-    else
-    {
+    } else {
       /* Set default DACL and Group. */
       nt_sec.setDefaultSecurity((root_scope == IDC_ROOT_SYSTEM));
 
       UserSettings Settings;
       UserSettings::instance().load(local_dir);
       main_display();
-      Settings.save(); // Clean exit.. save user options.
-      if (rebootneeded)
-        Logger().setExitMsg(IDS_REBOOT_REQUIRED);
-      Logger().exit(rebootneeded ? IDS_REBOOT_REQUIRED : 0);
+      Settings.save();  // Clean exit.. save user options.
+      if (g_rebootneeded) Logger().setExitMsg(IDS_REBOOT_REQUIRED);
+      Logger().exit(g_rebootneeded ? IDS_REBOOT_REQUIRED : 0);
     }
 
-finish_up:
-    ;
+finish_up:;
   }
   TOPLEVEL_CATCH(NULL, "main");
 

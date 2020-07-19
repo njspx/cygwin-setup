@@ -19,20 +19,17 @@
 #include "getopt++/GetOption.h"
 #include "getopt++/Option.h"
 
-GetOption
-  GetOption::Instance;
+GetOption GetOption::Instance;
 
 GetOption & GetOption::GetInstance ()
 {
-  if (Instance.inited != 42)
-    {
-      Instance.Init ();
-    }
+  if (Instance.inited != 42) {
+    Instance.Init();
+  }
   return Instance;
 }
 
-void
-GetOption::Init ()
+void GetOption::Init ()
 {
   inited = 42;
   OptionSet::Init();

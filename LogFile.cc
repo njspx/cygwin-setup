@@ -35,6 +35,8 @@
 
 static BoolOption VerboseOutput (false, 'v', "verbose",
                                  "Verbose output");
+static BoolOption DebugViewOut (false, 'd', "dbg",
+                                 "debug output");
 
 /* private helper class */
 class filedef
@@ -44,14 +46,12 @@ public:
   std::string key;
   bool append;
   filedef (const std::string& _path) : key (_path) {}
-  bool operator == (filedef const &rhs) const
-    {
-      return casecompare(key, rhs.key) == 0;
-    }
-  bool operator < (filedef const &rhs) const
-    {
-      return casecompare(key, rhs.key) < 0;
-    }
+  bool operator==(filedef const &rhs) const {
+    return casecompare(key, rhs.key) == 0;
+  }
+  bool operator<(filedef const &rhs) const {
+    return casecompare(key, rhs.key) < 0;
+  }
 };
 
 /* another */
@@ -91,8 +91,7 @@ LogFile::clearFiles ()
   files.clear ();
 }
 
-void
-LogFile::setFile (int minlevel, const std::string& path, bool append)
+void LogFile::setFile (int minlevel, const std::string& path, bool append)
 {
   FileSet::iterator f = files.find (filedef(path));
   if (f != files.end ())
@@ -104,20 +103,15 @@ LogFile::setFile (int minlevel, const std::string& path, bool append)
   files.insert (t);
 }
 
-std::string
-LogFile::getFileName (int level) const
+std::string LogFile::getFileName (int level) const
 {
-  for (FileSet::iterator i = files.begin();
-       i != files.end(); ++i)
-    {
-      if (i->level == level)
-        return i->key;
-    }
+  for (FileSet::iterator i = files.begin(); i != files.end(); ++i) {
+    if (i->level == level) return i->key;
+  }
   return "<no log was in use>";
 }
 
-void
-LogFile::exit (int exit_code, bool show_end_install_msg)
+void LogFile::exit (int exit_code, bool show_end_install_msg)
 {
   AntiVirus::AtExit();
   static int been_here = 0;
@@ -125,81 +119,68 @@ LogFile::exit (int exit_code, bool show_end_install_msg)
   if (been_here)
     ::exit (exit_code);
   been_here = 1;
-  
-  if (exit_msg)
-    {
-      char buf[1000], fmt[1000];
-      if (LoadString (hinstance, exit_msg, fmt, sizeof (fmt)) > 0)
-        {
-          snprintf (buf, 1000, fmt, backslash(getFileName(LOG_BABBLE)).c_str());
-          Log (LOG_PLAIN) << "note: " << buf << endLog;
-        }
+
+  if (exit_msg) {
+    char buf[1000], fmt[1000];
+    if (LoadString(hinstance, exit_msg, fmt, sizeof(fmt)) > 0) {
+      snprintf(buf, 1000, fmt, backslash(getFileName(LOG_BABBLE)).c_str());
+      Log(LOG_PLAIN) << "note: " << buf << endLog;
     }
-  
+  }
+
   /* ... in that it skips the boring log messages.  Exit code -1 is used when
      just printing the help output and when we're self-elevating. */
   if (show_end_install_msg)
-    Log (LOG_TIMESTAMP) << "Ending cygwin install" << endLog;
+    Log(LOG_TIMESTAMP) << "Ending cygwin install" << endLog;
 
-  for (FileSet::iterator i = files.begin();
-       i != files.end(); ++i)
-    {
-      log_save (i->level, i->key, i->append);
-    }
+  for (FileSet::iterator i = files.begin(); i != files.end(); ++i) {
+    log_save(i->level, i->key, i->append);
+  }
   // TODO: remove this when the ::exit issue is tidied up.
-  ::exit (exit_code);
+  ::exit(exit_code);
 }
 
-void
-LogFile::flushAll ()
+void LogFile::flushAll ()
 {
   Log (LOG_TIMESTAMP) << "Writing messages to log files without exiting" << endLog;
 
-  for (FileSet::iterator i = files.begin();
-       i != files.end(); ++i)
-    {
-      log_save (i->level, i->key, i->append);
-    }
+  for (FileSet::iterator i = files.begin(); i != files.end(); ++i) {
+    log_save(i->level, i->key, i->append);
+  }
 }
 
-void
-LogFile::log_save (int babble, const std::string& filename, bool append)
+void LogFile::log_save (int babble, const std::string& filename, bool append)
 {
   static int been_here = 0;
-  if (been_here)
-    return;
+  if (been_here) return;
   been_here = 1;
 
-  io_stream::mkpath_p (PATH_TO_FILE, "file://" + filename, 0755);
+  io_stream::mkpath_p(PATH_TO_FILE, "file://" + filename, 0755);
 
-  io_stream *f = io_stream::open("file://" + filename, append ? "at" : "wt", 0644);
-  if (!f)
-    {
-      fatal (NULL, IDS_NOLOGFILE, filename.c_str());
-      return;
-    }
+  io_stream *f =
+      io_stream::open("file://" + filename, append ? "at" : "wt", 0644);
+  if (!f) {
+    fatal(NULL, IDS_NOLOGFILE, filename.c_str());
+    return;
+  }
 
   LogEnt *l;
 
-  for (l = first_logent; l; l = l->next)
-    {
-      if (babble || !(l->level == LOG_BABBLE))
-        {
-          const char *tstr = l->msg.c_str();
-          f->write (tstr, strlen (tstr));
-          if (tstr[strlen (tstr) - 1] != '\n')
-            f->write ("\n", 1);
-        }
+  for (l = first_logent; l; l = l->next) {
+    if (babble || !(l->level == LOG_BABBLE)) {
+      const char *tstr = l->msg.c_str();
+      f->write(tstr, strlen(tstr));
+      if (tstr[strlen(tstr) - 1] != '\n') f->write("\n", 1);
     }
+  }
 
   delete f;
   been_here = 0;
 }
 
-std::ostream &
-LogFile::operator() (log_level theLevel)
+std::ostream & LogFile::operator() (log_level theLevel)
 {
-  if (theLevel < 1 || theLevel > 2)
+  if (theLevel < LOG_LEVEL_MIN || theLevel > LOG_LEVEL_MAX)
     throw new std::invalid_argument("Invalid log_level");
   if (!theStream)
     theStream = new std::stringbuf;
@@ -210,8 +191,7 @@ LogFile::operator() (log_level theLevel)
   return *this;
 }
 
-void
-LogFile::endEntry()
+void LogFile::endEntry()
 {
   std::string buf = theStream->str();
   delete theStream;
@@ -219,24 +199,25 @@ LogFile::endEntry()
   /* also write to stdout */
   if ((currEnt->level >= LOG_PLAIN) || VerboseOutput)
     std::cout << buf << std::endl;
+    
+  if(DebugViewOut)
+	  OutputDebugStringA(buf.c_str());
 
-  if (!currEnt)
-    {
-      /* get a default LogEnt */
-      currEnt = new LogEnt;
-      currEnt->next = 0;
-      currEnt->level = LOG_PLAIN;
-    }
+  if (!currEnt) {
+    /* get a default LogEnt */
+    currEnt = new LogEnt;
+    currEnt->next = 0;
+    currEnt->level = LOG_PLAIN;
+  }
   *next_logent = currEnt;
   next_logent = &(currEnt->next);
-  time (&(currEnt->when));
-  if (currEnt->level == LOG_TIMESTAMP)
-    {
-      char b[100];
-      struct tm *tm = localtime (&(currEnt->when));
-      strftime (b, 1000, "%Y/%m/%d %H:%M:%S ", tm);
-      currEnt->msg = b;
-    }
+  time(&(currEnt->when));
+  if (currEnt->level == LOG_TIMESTAMP) {
+    char b[100];
+    struct tm *tm = localtime(&(currEnt->when));
+    strftime(b, 1000, "%Y/%m/%d %H:%M:%S ", tm);
+    currEnt->msg = b;
+  }
   /* What follows is a hack to get around an (apparent) bug in libg++-3 with
    * non-0 memory on alloc
    */

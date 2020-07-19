@@ -31,7 +31,7 @@ static ControlAdjuster::ControlInfo PrereqControlsInfo[] = {
   {0, CP_LEFT, CP_TOP}
 };
 
-extern ThreeBarProgressPage Progress;
+extern ThreeBarProgressPage g_Progress;
 BoolOption IncludeSource (false, 'I', "include-source", "Automatically install source for every package installed");
 
 // ---------------------------------------------------------------------------
@@ -163,9 +163,9 @@ PrereqChecker::isMet ()
 {
   packagedb db;
 
-  Progress.SetText1 ("Solving dependencies...");
-  Progress.SetText2 ("");
-  Progress.SetText3 ("");
+  g_Progress.SetText1 ("Solving dependencies...");
+  g_Progress.SetText2 ("");
+  g_Progress.SetText3 ("");
 
   // Create task list corresponding to current state of package database
   q.setTasks();
@@ -227,16 +227,17 @@ static DWORD WINAPI
 do_prereq_check_reflector (void *p)
 {
   HANDLE *context;
-  context = (HANDLE *) p;
+  context = (HANDLE *)p;
 
-  try
-  {
-    int next_dialog = do_prereq_check_thread ((HINSTANCE) context[0], (HWND) context[1]);
+  try {
+    int next_dialog =
+        do_prereq_check_thread((HINSTANCE)context[0], (HWND)context[1]);
 
     // Tell the progress page that we're done prereq checking
-    Progress.PostMessageNow (WM_APP_PREREQ_CHECK_THREAD_COMPLETE, 0, next_dialog);
+    g_Progress.PostMessageNow(WM_APP_PREREQ_CHECK_THREAD_COMPLETE, 0,
+                              next_dialog);
   }
-  TOPLEVEL_CATCH((HWND) context[1], "prereq_check");
+  TOPLEVEL_CATCH((HWND)context[1], "prereq_check");
 
   ExitThread(0);
 }

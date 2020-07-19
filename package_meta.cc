@@ -426,44 +426,39 @@ packagemeta::LDesc () const
 std::string
 packagemeta::action_caption () const
 {
-  switch (_action)
-    {
+  switch (_action) {
     case Uninstall_action:
       return "Uninstall";
     case NoChange_action:
-      if (!desired)
-        return "Skip";
+      if (!desired) return "Skip";
       if (desired.sourcePackage() && srcpicked())
-        /* FIXME: Redo source should come up if the tarball is already present locally */
+        /* FIXME: Redo source should come up if the tarball is already present
+         * locally */
         return "Source";
       return "Keep";
     case Reinstall_action:
       return packagedb::task == PackageDB_Install ? "Reinstall" : "Retrieve";
     case Install_action:
-      return desired.Canonical_version ();
-    }
+      return desired.Canonical_version();
+  }
   return "Unknown";
 }
 
 void
 packagemeta::select_action (int id, trusts const deftrust)
 {
-  if (id <= 0)
-    {
-      // Install a specific version
-      std::set<packageversion>::iterator i = versions.begin ();
-      for (int j = -id; j > 0; j--)
-        i++;
+  if (id <= 0) {
+    // Install a specific version
+    std::set<packageversion>::iterator i = versions.begin();
+    for (int j = -id; j > 0; j--) i++;
 
-      set_action(Install_action, *i, true);
-    }
-  else
-    {
-      if (id == packagemeta::NoChange_action)
-        set_action((packagemeta::_actions)id, installed);
-      else
-        set_action((packagemeta::_actions)id, trustp (true, deftrust), true);
-    }
+    set_action(Install_action, *i, true);
+  } else {
+    if (id == packagemeta::NoChange_action)
+      set_action((packagemeta::_actions)id, installed);
+    else
+      set_action((packagemeta::_actions)id, trustp(true, deftrust), true);
+  }
 }
 
 // toggle between the currently installed version (or uninstalled, if not
@@ -471,20 +466,16 @@ packagemeta::select_action (int id, trusts const deftrust)
 void
 packagemeta::toggle_action ()
 {
-  if (desired != installed)
-    {
-      set_action(NoChange_action, installed);
-    }
-  else
-    {
-      packageversion naively_preferred;
-      std::set<packageversion>::iterator i = versions.begin ();
-      for (i = versions.begin (); i != versions.end (); ++i)
-        if (!packagedb::solver.is_test_package(*i))
-          naively_preferred = *i;
+  if (desired != installed) {
+    set_action(NoChange_action, installed);
+  } else {
+    packageversion naively_preferred;
+    std::set<packageversion>::iterator i = versions.begin();
+    for (i = versions.begin(); i != versions.end(); ++i)
+      if (!packagedb::solver.is_test_package(*i)) naively_preferred = *i;
 
-      set_action(Install_action, naively_preferred, true);
-    }
+    set_action(Install_action, naively_preferred, true);
+  }
 }
 
 ActionList *
@@ -493,29 +484,24 @@ packagemeta::list_actions(trusts const trust)
   // build the list of possible actions
   ActionList *al = new ActionList();
 
-  al->add("Uninstall", (int)Uninstall_action, (_action == Uninstall_action), bool(installed));
-  al->add("Skip", (int)NoChange_action, (_action == NoChange_action) && !installed, !installed);
+  al->add("Uninstall", (int)Uninstall_action, (_action == Uninstall_action),
+          bool(installed));
+  al->add("Skip", (int)NoChange_action,
+          (_action == NoChange_action) && !installed, !installed);
 
   std::set<packageversion>::iterator i;
-  for (i = versions.begin (); i != versions.end (); ++i)
-    {
-      if (*i == installed)
-        {
-          al->add("Keep", (int)NoChange_action, (_action == NoChange_action), TRUE);
-          al->add(packagedb::task == PackageDB_Install ? "Reinstall" : "Retrieve",
-                  (int)Reinstall_action, (_action == Reinstall_action), TRUE);
-        }
-      else
-        {
-          std::string label = i->Canonical_version().c_str();
-          if (packagedb::solver.is_test_package(*i))
-            label += " (Test)";
-          al->add(label,
-                  -std::distance(versions.begin (), i),
-                  (_action == Install_action) && (*i == desired),
-                  TRUE);
-        }
+  for (i = versions.begin(); i != versions.end(); ++i) {
+    if (*i == installed) {
+      al->add("Keep", (int)NoChange_action, (_action == NoChange_action), TRUE);
+      al->add(packagedb::task == PackageDB_Install ? "Reinstall" : "Retrieve",
+              (int)Reinstall_action, (_action == Reinstall_action), TRUE);
+    } else {
+      std::string label = i->Canonical_version().c_str();
+      if (packagedb::solver.is_test_package(*i)) label += " (Test)";
+      al->add(label, -std::distance(versions.begin(), i),
+              (_action == Install_action) && (*i == desired), TRUE);
     }
+  }
 
   return al;
 }
@@ -525,74 +511,54 @@ void
 packagemeta::set_action (_actions action, packageversion const &default_version,
                          bool useraction)
 {
-  if (action == NoChange_action)
-    {
-      // if installed, keep
-      if (installed
-	  || categories.find ("Base") != categories.end ()
-	  || categories.find ("Orphaned") != categories.end ())
-	{
-	  desired = default_version;
-	  if (desired)
-	    {
-	      pick (desired != installed);
-	      srcpick (false);
-	    }
-	}
-      else
-        {
-          // else, if not installed, skip
-          desired = packageversion ();
-          pick(false);
-        }
-    }
-  else if (action == Install_action)
-    {
+  if (action == NoChange_action) {
+    // if installed, keep
+    if (installed || categories.find("Base") != categories.end() ||
+        categories.find("Orphaned") != categories.end()) {
       desired = default_version;
-      if (desired)
-	{
-	  if (desired != installed)
-	    if (desired.accessible ())
-	      {
-		/* Memorize the fact that the user picked to install this package at least once. */
-		if (useraction)
-		  user_picked = true;
-
-		pick (true);
-		srcpick (false);
-	      }
-	    else
-	      {
-		pick (false);
-		srcpick (true);
-	      }
-	  else
-	    {
-	      action = NoChange_action;
-	      pick (false);
-	      srcpick (false);
-	    }
-	}
+      if (desired) {
+        pick(desired != installed);
+        srcpick(false);
+      }
+    } else {
+      // else, if not installed, skip
+      desired = packageversion();
+      pick(false);
     }
-  else if (action == Reinstall_action)
-    {
-      desired = installed;
-      if (desired)
-	{
-	  pick (true);
-	  srcpick (false);
-	}
-      else
-      {
+  } else if (action == Install_action) {
+    desired = default_version;
+    if (desired) {
+      if (desired != installed)
+        if (desired.accessible()) {
+          /* Memorize the fact that the user picked to install this package at
+           * least once. */
+          if (useraction) user_picked = true;
+
+          pick(true);
+          srcpick(false);
+        } else {
+          pick(false);
+          srcpick(true);
+        }
+      else {
         action = NoChange_action;
-        pick (false);
-        srcpick (false);
+        pick(false);
+        srcpick(false);
       }
     }
-  else if (action == Uninstall_action)
-    {
-      desired = packageversion ();
+  } else if (action == Reinstall_action) {
+    desired = installed;
+    if (desired) {
+      pick(true);
+      srcpick(false);
+    } else {
+      action = NoChange_action;
+      pick(false);
+      srcpick(false);
     }
+  } else if (action == Uninstall_action) {
+    desired = packageversion();
+  }
 
   _action = action;
 }

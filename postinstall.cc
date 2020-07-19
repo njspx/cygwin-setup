@@ -32,8 +32,8 @@
 #include <algorithm>
 #include <sstream>
 
-extern ThreeBarProgressPage Progress;
-extern PostInstallResultsPage PostInstallResults;
+extern ThreeBarProgressPage g_Progress;
+extern PostInstallResultsPage g_PostInstallResults;
 
 // ---------------------------------------------------------------------------
 //
@@ -91,27 +91,23 @@ private:
 //
 // ---------------------------------------------------------------------------
 
-class RunScript
+class RunScript 
 {
 public:
-  RunScript(const std::string& name, const std::vector<Script> &scripts) : _name(name), _scripts(scripts), _cnt(0)
-    {
-      Progress.SetText2 (name.c_str());
-      Progress.SetBar1 (0, _scripts.size());
-    }
-  virtual ~RunScript()
-    {
-      Progress.SetText3 ("");
-    }
-  int run_one(Script const &aScript)
-    {
-      int retval;
-      Progress.SetText3 (aScript.fullName().c_str());
-      retval = aScript.run();
-      ++_cnt;
-      Progress.SetBar1 (_cnt, _scripts.size());
-      return retval;
-    }
+  RunScript(const std::string &name, const std::vector<Script> &scripts)
+      : _name(name), _scripts(scripts), _cnt(0) {
+    g_Progress.SetText2(name.c_str());
+    g_Progress.SetBar1(0, _scripts.size());
+  }
+  virtual ~RunScript() { g_Progress.SetText3(""); }
+  int run_one(Script const &aScript) {
+    int retval;
+    g_Progress.SetText3(aScript.fullName().c_str());
+    retval = aScript.run();
+    ++_cnt;
+    g_Progress.SetBar1(_cnt, _scripts.size());
+    return retval;
+  }
   void run_all(std::string &s)
   {
     bool package_name_recorded = FALSE;
@@ -145,118 +141,110 @@ private:
 static std::string
 do_postinstall_thread (HINSTANCE h, HWND owner)
 {
-  Progress.SetText1 ("Running...");
-  Progress.SetText2 ("");
-  Progress.SetText3 ("");
-  Progress.SetBar1 (0, 1);
-  Progress.SetBar2 (0, 1);
+  g_Progress.SetText1("Running...");
+  g_Progress.SetText2("");
+  g_Progress.SetText3("");
+  g_Progress.SetBar1(0, 1);
+  g_Progress.SetBar2(0, 1);
 
   packagedb db;
-  std::vector<packagemeta*> packages;
-  PackageDBConnectedIterator i = db.connectedBegin ();
-  while (i != db.connectedEnd ())
-    {
-      packagemeta & pkg = **i;
-      if (pkg.installed)
-	packages.push_back(&pkg);
-      ++i;
-    }
+  std::vector<packagemeta *> packages;
+  PackageDBConnectedIterator i = db.connectedBegin();
+  while (i != db.connectedEnd()) {
+    packagemeta &pkg = **i;
+    if (pkg.installed) packages.push_back(&pkg);
+    ++i;
+  }
 
-  const std::string postinst = cygpath ("/etc/postinstall");
+  const std::string postinst = cygpath("/etc/postinstall");
   const std::string strata("0_z");
   std::string s = "";
   // iterate over all strata
-  for (std::string::const_iterator it = strata.begin(); it != strata.end(); ++it)
+  for (std::string::const_iterator it = strata.begin(); it != strata.end();
+       ++it) {
+    const std::string sit(1, *it);
+    // Look for any scripts in /etc/postinstall which should always be run
+    std::vector<Script> perpetual;
+    PerpetualFindVisitor myPerpetualVisitor(&perpetual, sit);
+    Find(postinst).accept(myPerpetualVisitor);
+    // sort the list alphabetically, assumes ASCII names only
+    sort(perpetual.begin(), perpetual.end());
+    // and try to run what we've found
     {
-      const std::string sit(1, *it);
-  // Look for any scripts in /etc/postinstall which should always be run
-  std::vector<Script> perpetual;
-  PerpetualFindVisitor myPerpetualVisitor (&perpetual, sit);
-  Find (postinst).accept (myPerpetualVisitor);
-  // sort the list alphabetically, assumes ASCII names only
-  sort (perpetual.begin(), perpetual.end());
-  // and try to run what we've found
-  {
-    RunScript scriptRunner(sit + "/Perpetual", perpetual);
-    scriptRunner.run_all(s);
-  }
-  // For each package we installed, we noted anything installed into /etc/postinstall.
-  // run those scripts now
-  int numpkg = packages.size() + 1;
-  int k = 0;
-  for (std::vector <packagemeta *>::iterator  i = packages.begin (); i != packages.end (); ++i)
-    {
-      packagemeta & pkg = **i;
+      RunScript scriptRunner(sit + "/Perpetual", perpetual);
+      scriptRunner.run_all(s);
+    }
+    // For each package we installed, we noted anything installed into
+    // /etc/postinstall. run those scripts now
+    int numpkg = packages.size() + 1;
+    int k = 0;
+    for (std::vector<packagemeta *>::iterator i = packages.begin();
+         i != packages.end(); ++i) {
+      packagemeta &pkg = **i;
 
       std::vector<Script> installed = pkg.scripts();
       std::vector<Script> run;
       // extract non-perpetual scripts for the current stratum
-      for (std::vector <Script>::iterator  j = installed.begin(); j != installed.end(); j++)
-	{
-	  if ((*j).not_p(sit))
-	    run.push_back(*j);
-	}
+      for (std::vector<Script>::iterator j = installed.begin();
+           j != installed.end(); j++) {
+        if ((*j).not_p(sit)) run.push_back(*j);
+      }
 
       RunScript scriptRunner(sit + "/" + pkg.name, run);
       scriptRunner.run_all(s);
 
-      Progress.SetBar2 (++k, numpkg);
+      g_Progress.SetBar2(++k, numpkg);
     }
-  // Look for runnable non-perpetual scripts in /etc/postinstall.
-  // This happens when a script from a previous install failed to run.
-  std::vector<Script> scripts;
-  RunFindVisitor myVisitor (&scripts, sit);
-  Find (postinst).accept (myVisitor);
-  // Remove anything which we just tried to run (so we don't try twice)
-  for (std::vector <packagemeta *>::iterator i = packages.begin (); i != packages.end (); ++i)
+    // Look for runnable non-perpetual scripts in /etc/postinstall.
+    // This happens when a script from a previous install failed to run.
+    std::vector<Script> scripts;
+    RunFindVisitor myVisitor(&scripts, sit);
+    Find(postinst).accept(myVisitor);
+    // Remove anything which we just tried to run (so we don't try twice)
+    for (std::vector<packagemeta *>::iterator i = packages.begin();
+         i != packages.end(); ++i) {
+      packagemeta &pkg = **i;
+      for (std::vector<Script>::const_iterator j = pkg.scripts().begin();
+           j != pkg.scripts().end(); j++) {
+        std::vector<Script>::iterator p =
+            find(scripts.begin(), scripts.end(), *j);
+        if (p != scripts.end()) {
+          scripts.erase(p);
+        }
+      }
+    }
+    // and try to run what's left...
     {
-       packagemeta & pkg = **i;
-       for (std::vector<Script>::const_iterator j = pkg.scripts().begin();
-            j != pkg.scripts().end();
-            j++)
-         {
-           std::vector<Script>::iterator p = find(scripts.begin(), scripts.end(), *j);
-           if (p != scripts.end())
-             {
-               scripts.erase(p);
-             }
-         }
+      RunScript scriptRunner(sit + "/Unknown package", scripts);
+      scriptRunner.run_all(s);
     }
-  // and try to run what's left...
-  {
-    RunScript scriptRunner(sit + "/Unknown package", scripts);
-    scriptRunner.run_all(s);
+
+    g_Progress.SetBar2(numpkg, numpkg);
   }
-
-  Progress.SetBar2 (numpkg, numpkg);
-
-    }
   return s;
 }
 
-static DWORD WINAPI
-do_postinstall_reflector (void *p)
+static DWORD WINAPI do_postinstall_reflector(void *p) 
 {
   HANDLE *context;
-  context = (HANDLE *) p;
+  context = (HANDLE *)p;
 
-  try
-  {
-    std::string s = do_postinstall_thread ((HINSTANCE) context[0], (HWND) context[1]);
+  try {
+    std::string s =
+        do_postinstall_thread((HINSTANCE)context[0], (HWND)context[1]);
 
     // Tell the postinstall results page the results string
-    PostInstallResults.SetResultsString(s);
+    g_PostInstallResults.SetResultsString(s);
 
     // Tell the progress page that we're done running scripts
-    Progress.PostMessageNow (WM_APP_POSTINSTALL_THREAD_COMPLETE, 0,
-                          s.empty() ? IDD_DESKTOP : IDD_POSTINSTALL);
+    g_Progress.PostMessageNow(WM_APP_POSTINSTALL_THREAD_COMPLETE, 0,
+                            s.empty() ? IDD_DESKTOP : IDD_POSTINSTALL);
   }
-  TOPLEVEL_CATCH((HWND) context[1], "postinstall");
+  TOPLEVEL_CATCH((HWND)context[1], "postinstall");
 
   /* Revert primary group to admins group.  This allows to create all the
      state files written by setup as admin group owned. */
-  if (root_scope == IDC_ROOT_SYSTEM)
-    nt_sec.setAdminGroup ();
+  if (root_scope == IDC_ROOT_SYSTEM) nt_sec.setAdminGroup();
 
   ExitThread(0);
 }

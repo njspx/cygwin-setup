@@ -41,8 +41,7 @@ Find::~Find()
     FindClose (h);
 }
 
-void
-Find::accept (FindVisitor &aVisitor, int level)
+void Find::accept (FindVisitor &aVisitor, int level)
 {
   /* The usage of multibyte strings within setup is so entangled into
      the various C++ classes, it's very hard to disentangle it and use
@@ -66,23 +65,21 @@ Find::accept (FindVisitor &aVisitor, int level)
   if (h == INVALID_HANDLE_VALUE)
     return;
 
-  do
-    {
-      if (wcscmp (w_wfd.cFileName, L".") == 0
-	  || wcscmp (w_wfd.cFileName, L"..") == 0)
-	continue;
+  do {
+    if (wcscmp(w_wfd.cFileName, L".") == 0 ||
+        wcscmp(w_wfd.cFileName, L"..") == 0)
+      continue;
 
-      /* TODO: make a non-win32 file and dir info class and have that as the 
-       * visited node 
-       */
-      WIN32_FIND_DATAA wfd;
-      memcpy (&wfd, &w_wfd, sizeof (wfd));
-      WideCharToMultiByte (CP_UTF8, 0, w_wfd.cFileName, MAX_PATH,
-			   wfd.cFileName, MAX_PATH, NULL, NULL);
-      if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-	aVisitor.visitDirectory (_start_dir, &wfd, level);
-      else
-	aVisitor.visitFile (_start_dir, &wfd);
-    }
-  while (FindNextFileW (h, &w_wfd));
+    /* TODO: make a non-win32 file and dir info class and have that as the
+     * visited node
+     */
+    WIN32_FIND_DATAA wfd;
+    memcpy(&wfd, &w_wfd, sizeof(wfd));
+    WideCharToMultiByte(CP_UTF8, 0, w_wfd.cFileName, MAX_PATH, wfd.cFileName,
+                        MAX_PATH, NULL, NULL);
+    if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+      aVisitor.visitDirectory(_start_dir, &wfd, level);
+    else
+      aVisitor.visitFile(_start_dir, &wfd);
+  } while (FindNextFileW(h, &w_wfd));
 }

@@ -26,7 +26,7 @@
 #include "filemanip.h"
 #include "io_stream.h"
 
-extern ThreeBarProgressPage Progress;
+extern ThreeBarProgressPage g_Progress;
 
 site::site (const std::string& newkey) : key(newkey)
 {
@@ -112,16 +112,16 @@ packagesource::check_sha512 (const std::string fullname) const
 
   Log (LOG_BABBLE) << "Checking SHA512 for " << fullname << endLog;
 
-  Progress.SetText1 (("Checking SHA512 for " + shortname).c_str ());
-  Progress.SetText4 ("Progress:");
-  Progress.SetBar1 (0);
+  g_Progress.SetText1 (("Checking SHA512 for " + shortname).c_str ());
+  g_Progress.SetText4 ("Progress:");
+  g_Progress.SetBar1 (0);
 
   unsigned char buffer[64 * 1024];
   ssize_t count;
   while ((count = thefile->read (buffer, sizeof (buffer))) > 0)
   {
     SHA512Update (&ctx, buffer, count);
-    Progress.SetBar1 (thefile->tell (), thefile->get_size ());
+    g_Progress.SetBar1 (thefile->tell (), thefile->get_size ());
   }
   delete thefile;
   if (count < 0)
@@ -151,45 +151,41 @@ packagesource::check_sha512 (const std::string fullname) const
 void
 packagesource::check_md5 (const std::string fullname) const
 {
-  io_stream *thefile = io_stream::open (fullname, "rb", 0);
+  io_stream *thefile = io_stream::open(fullname, "rb", 0);
   if (!thefile)
-    throw new Exception (TOSTRING (__LINE__) " " __FILE__,
-			 std::string ("IO Error opening ") + fullname,
-			 APPERR_IO_ERROR);
+    throw new Exception(TOSTRING(__LINE__) " " __FILE__,
+                        std::string("IO Error opening ") + fullname,
+                        APPERR_IO_ERROR);
   MD5Sum tempMD5;
-  tempMD5.begin ();
+  tempMD5.begin();
 
-  Log (LOG_BABBLE) << "Checking MD5 for " << fullname << endLog;
+  Log(LOG_BABBLE) << "Checking MD5 for " << fullname << endLog;
 
-  Progress.SetText1 (("Checking MD5 for " + shortname).c_str ());
-  Progress.SetText4 ("Progress:");
-  Progress.SetBar1 (0);
+  g_Progress.SetText1(("Checking MD5 for " + shortname).c_str());
+  g_Progress.SetText4("Progress:");
+  g_Progress.SetBar1(0);
 
   unsigned char buffer[64 * 1024];
   ssize_t count;
-  while ((count = thefile->read (buffer, sizeof (buffer))) > 0)
-    {
-      tempMD5.append (buffer, count);
-      Progress.SetBar1 (thefile->tell (), thefile->get_size ());
-    }
+  while ((count = thefile->read(buffer, sizeof(buffer))) > 0) {
+    tempMD5.append(buffer, count);
+    g_Progress.SetBar1(thefile->tell(), thefile->get_size());
+  }
   delete thefile;
   if (count < 0)
-    throw new Exception (TOSTRING(__LINE__) " " __FILE__,
-			 "IO Error reading " + fullname,
-			 APPERR_IO_ERROR);
+    throw new Exception(TOSTRING(__LINE__) " " __FILE__,
+                        "IO Error reading " + fullname, APPERR_IO_ERROR);
 
-  tempMD5.finish ();
+  tempMD5.finish();
 
-  if (md5 != tempMD5)
-    {
-      Log (LOG_BABBLE) << "INVALID PACKAGE: " << fullname
-	<< " - MD5 mismatch: Ini-file: " << md5.str()
-	<< " != On-disk: " << tempMD5.str() << endLog;
-      throw new Exception (TOSTRING(__LINE__) " " __FILE__,
-			   "MD5 failure for " + fullname,
-			   APPERR_CORRUPT_PACKAGE);
-    }
+  if (md5 != tempMD5) {
+    Log(LOG_BABBLE) << "INVALID PACKAGE: " << fullname
+                    << " - MD5 mismatch: Ini-file: " << md5.str()
+                    << " != On-disk: " << tempMD5.str() << endLog;
+    throw new Exception(TOSTRING(__LINE__) " " __FILE__,
+                        "MD5 failure for " + fullname, APPERR_CORRUPT_PACKAGE);
+  }
 
-  Log (LOG_BABBLE) << "MD5 verified OK: " << fullname << " "
-    << md5.str() << endLog;
+  Log(LOG_BABBLE) << "MD5 verified OK: " << fullname << " " << md5.str()
+                  << endLog;
 }

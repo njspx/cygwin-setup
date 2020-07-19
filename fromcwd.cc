@@ -36,80 +36,76 @@
 
 class SetupFindVisitor : public FindVisitor
 {
+
 public:
+
   SetupFindVisitor () : inidir (false)
   {
-    found_ini.resize (setup_ext_list.size ());
-    found_ini.assign (setup_ext_list.size (), false);
+    found_ini.resize (g_setup_ext_list.size ());
+    found_ini.assign (g_setup_ext_list.size (), false);
   }
-  virtual void visitFile (const std::string& basePath,
-			  const WIN32_FIND_DATA *theFile)
+
+  virtual void visitFile(const std::string &basePath,
+                         const WIN32_FIND_DATA *theFile) 
   {
-    if (inidir &&
-	(theFile->nFileSizeLow || theFile->nFileSizeHigh))
-      {
-	std::vector<bool>::iterator fi = found_ini.begin ();
-	for (std::vector<std::string>::const_iterator ext = setup_ext_list.begin ();
-	     ext != setup_ext_list.end ();
-	     ext++, fi++)
-	  {
-	    if (!casecompare (SetupBaseName + "." + *ext,  theFile->cFileName))
-	      *fi = true;
-	  }
+    if (inidir && (theFile->nFileSizeLow || theFile->nFileSizeHigh)) {
+      std::vector<bool>::iterator fi = found_ini.begin();
+      for (std::vector<std::string>::const_iterator ext = g_setup_ext_list.begin();
+           ext != g_setup_ext_list.end(); ext++, fi++) {
+        if (!casecompare(SetupBaseName + "." + *ext, theFile->cFileName))
+          *fi = true;
       }
+    }
   }
+
   virtual void visitDirectory (const std::string& basePath,
 			       WIN32_FIND_DATA const *aDir, int level)
   {
-    if (level <= 0)
-      return;
-    inidir = !casecompare (SetupArch, aDir->cFileName);
-    if (level == 1 && !inidir)
-      return;
-    Find aFinder (basePath + aDir->cFileName);
-    aFinder.accept (*this, inidir ? 0 : --level);
-	std::vector<bool>::const_iterator fi = found_ini.begin ();
-	for (std::vector<std::string>::const_iterator ext = setup_ext_list.begin ();
-	     ext != setup_ext_list.end ();
-	     ext++, fi++)
-	  {
-	    if (*fi)
-	      {
-		found_ini_list.push_back (basePath + SetupArch + "/"
-					  + SetupBaseName + "." + *ext);
-		/* 
-		 * Terminate the search after the first setup file
-		 * found, which shadows any setup files with
-		 * extensions later in the preference order in the
-		 * same directory.
-		 *
-		 * FIXME: It would probably be more sensible to return
-		 * all matches (perhaps one list per directory) and
-		 * let do_local_ini pick the first one that parses
-		 * correctly, just like do_remote_ini does.
-		 */
-		break;
-	      }
-	  }
-	found_ini.assign (setup_ext_list.size (), false);
+    if (level <= 0) return;
+    inidir = !casecompare(SetupArch, aDir->cFileName);
+    if (level == 1 && !inidir) return;
+    Find aFinder(basePath + aDir->cFileName);
+    aFinder.accept(*this, inidir ? 0 : --level);
+    std::vector<bool>::const_iterator fi = found_ini.begin();
+    for (std::vector<std::string>::const_iterator ext = g_setup_ext_list.begin();
+         ext != g_setup_ext_list.end(); ext++, fi++) {
+      if (*fi) {
+        g_found_ini_list.push_back(basePath + SetupArch + "/" + SetupBaseName + "." + *ext);
+        /*
+         * Terminate the search after the first setup file
+         * found, which shadows any setup files with
+         * extensions later in the preference order in the
+         * same directory.
+         *
+         * FIXME: It would probably be more sensible to return
+         * all matches (perhaps one list per directory) and
+         * let do_local_ini pick the first one that parses
+         * correctly, just like do_remote_ini does.
+         */
+        break;
+      }
+    }
+    found_ini.assign(g_setup_ext_list.size(), false);
   }
+
   virtual ~ SetupFindVisitor (){}
   operator bool () const
   {
-    return !found_ini_list.empty ();
+    return !g_found_ini_list.empty ();
   }
+
 protected:
   SetupFindVisitor (SetupFindVisitor const &);
   SetupFindVisitor & operator= (SetupFindVisitor const &);
+
 private:
   bool inidir;
   std::vector<bool> found_ini;
 };
 
-IniList found_ini_list;
+IniList g_found_ini_list;
 
-bool
-do_from_local_dir (HINSTANCE h, HWND owner, std::string &local_dir)
+bool do_from_local_dir (HINSTANCE h, HWND owner, std::string &local_dir)
 {
   SetupFindVisitor found;
   // single mirror?

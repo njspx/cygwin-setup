@@ -44,7 +44,7 @@
 
 #include "LogSingleton.h"
 
-extern ThreeBarProgressPage Progress;
+extern ThreeBarProgressPage g_Progress;
 
 static int max_bytes = 0;
 static int is_local_install = 0;
@@ -62,45 +62,40 @@ init_dialog (const std::string &url, int length)
 
   std::string::size_type divide = url.find_last_of('/');
   max_bytes = length;
-  Progress.SetText1("Downloading...");
-  Progress.SetText2((url.substr(divide + 1) + " from "
+  g_Progress.SetText1("Downloading...");
+  g_Progress.SetText2((url.substr(divide + 1) + " from "
                      + url.substr(0, divide)).c_str());
-  Progress.SetText3("Connecting...");
-  Progress.SetBar1(0);
+  g_Progress.SetText3("Connecting...");
+  g_Progress.SetBar1(0);
   start_tics = GetTickCount ();
 }
 
-
-static void
-progress (int bytes)
+static void progress(int bytes) 
 {
-  if (is_local_install)
-    return;
+  if (is_local_install) return;
   static char buf[100];
   double kbps;
   static unsigned int last_tics = 0;
-  DWORD tics = GetTickCount ();
-  if (tics == start_tics)	// to prevent division by zero
+  DWORD tics = GetTickCount();
+  if (tics == start_tics)  // to prevent division by zero
     return;
-  if (tics < last_tics + 200)	// to prevent flickering updates
+  if (tics < last_tics + 200)  // to prevent flickering updates
     return;
   last_tics = tics;
 
   kbps = ((double)bytes) / (double)(tics - start_tics);
-  if (max_bytes > 0)
-    {
-      int perc = (int)(100.0 * ((double)bytes) / (double)max_bytes);
-      Progress.SetBar1(bytes, max_bytes);
-      sprintf (buf, "%d %%  (%dk/%dk)  %03.1f kB/s",
-	       perc, bytes / 1000, max_bytes / 1000, kbps);
-      if (total_download_bytes > 0)
-     	  Progress.SetBar2(total_download_bytes_sofar + bytes,
-			   total_download_bytes);
-    }
-  else
-    sprintf (buf, "%d  %2.1f kB/s", bytes, kbps);
+  if (max_bytes > 0) {
+    int perc = (int)(100.0 * ((double)bytes) / (double)max_bytes);
+    g_Progress.SetBar1(bytes, max_bytes);
+    sprintf(buf, "%d %%  (%dk/%dk)  %03.1f kB/s", perc, bytes / 1000,
+            max_bytes / 1000, kbps);
+    if (total_download_bytes > 0)
+      g_Progress.SetBar2(total_download_bytes_sofar + bytes,
+                         total_download_bytes);
+  } else
+    sprintf(buf, "%d  %2.1f kB/s", bytes, kbps);
 
-  Progress.SetText3(buf);
+  g_Progress.SetText3(buf);
 }
 
 static void
@@ -193,67 +188,54 @@ get_url_to_string (const std::string &_url, HWND owner)
   return std::string(temp);
 }
 
-int
-get_url_to_file (const std::string &_url,
-                 const std::string &_filename,
-                 int expected_length,
-		 HWND owner)
+int get_url_to_file(const std::string &_url, const std::string &_filename,
+                    int expected_length, HWND owner) 
 {
-  Log (LOG_BABBLE) << "get_url_to_file " << _url << " " << _filename << endLog;
-  if (total_download_bytes > 0)
-    {
-      int df = diskfull (get_root_dir ().c_str());
-      Progress.SetBar3(df);
-    }
-  init_dialog (_url, expected_length);
+  Log(LOG_BABBLE) << "get_url_to_file " << _url << " " << _filename << endLog;
+  if (total_download_bytes > 0) {
+    int df = diskfull(get_root_dir().c_str());
+    g_Progress.SetBar3(df);
+  }
+  init_dialog(_url, expected_length);
 
-  remove (_filename.c_str());		/* but ignore errors */
+  remove(_filename.c_str()); /* but ignore errors */
 
-  NetIO *n = NetIO::open (_url.c_str(), false);
-  if (!n || !n->ok ())
-    {
-      delete n;
-      return 1;
-    }
+  NetIO *n = NetIO::open(_url.c_str(), false);
+  if (!n || !n->ok()) {
+    delete n;
+    return 1;
+  }
 
-  FILE *f = nt_fopen (_filename.c_str(), "wb");
-  if (!f)
-    {
-      const char *err = strerror (errno);
-      if (!err)
-	err = "(unknown error)";
-      fatal (owner, IDS_ERR_OPEN_WRITE, _filename.c_str(), err);
-    }
+  FILE *f = nt_fopen(_filename.c_str(), "wb");
+  if (!f) {
+    const char *err = strerror(errno);
+    if (!err) err = "(unknown error)";
+    fatal(owner, IDS_ERR_OPEN_WRITE, _filename.c_str(), err);
+  }
 
-  if (n->file_size)
-    max_bytes = n->file_size;
+  if (n->file_size) max_bytes = n->file_size;
 
   int total_bytes = 0;
-  progress (0);
-  while (1)
-    {
-      char buf[8192];
-      int count;
-      count = n->read (buf, sizeof (buf));
-      if (count <= 0)
-	break;
-      fwrite (buf, 1, count, f);
-      total_bytes += count;
-      progress (total_bytes);
-    }
+  progress(0);
+  while (1) {
+    char buf[8192];
+    int count;
+    count = n->read(buf, sizeof(buf));
+    if (count <= 0) break;
+    fwrite(buf, 1, count, f);
+    total_bytes += count;
+    progress(total_bytes);
+  }
 
   total_download_bytes_sofar += total_bytes;
 
-  fclose (f);
-  if (n)
-    delete n;
+  fclose(f);
+  if (n) delete n;
 
-  if (total_download_bytes > 0)
-    {
-      int df = diskfull (get_root_dir ().c_str());
-	  Progress.SetBar3(df);
-    }
+  if (total_download_bytes > 0) {
+    int df = diskfull(get_root_dir().c_str());
+    g_Progress.SetBar3(df);
+  }
 
   return 0;
 }
-

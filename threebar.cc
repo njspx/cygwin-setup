@@ -161,131 +161,103 @@ ThreeBarProgressPage::OnActivate ()
   Window::PostMessageNow (task);
 }
 
-bool
-ThreeBarProgressPage::OnMessageApp (UINT uMsg, WPARAM wParam, LPARAM lParam)
+bool ThreeBarProgressPage::OnMessageApp(UINT uMsg, WPARAM wParam, LPARAM lParam) 
 {
-  switch (uMsg)
-    {
-    case WM_APP_PREREQ_CHECK:
-      {
-	// Start the prereq-check thread
-	do_prereq_check (GetInstance (), GetHWND ());
-	break;
-      }
-    case WM_APP_PREREQ_CHECK_THREAD_COMPLETE:
-      {
-        GetOwner ()->SetActivePageByID (lParam);
-        break;
-      }
-    case WM_APP_START_DOWNLOAD:
-      {
-	// Start the package download thread.
-	do_download (GetInstance (), GetHWND ());
-	break;
-      }
-    case WM_APP_DOWNLOAD_THREAD_COMPLETE:
-      {
-	if (lParam == IDD_S_INSTALL)
-	  {
-	    // Download is complete and we want to go on to the install.
-	    Window::PostMessageNow (WM_APP_START_INSTALL);
-	  }
-	else if (lParam != 0)
-	  {
-	    // Download either failed or completed in download-only mode.
-	    GetOwner ()->SetActivePageByID (lParam);
-	  }
-	else
-	  {
-	    fatal("Unexpected fallthrough from the download thread", NO_ERROR);
-	  }
-	break;
-      }
-    case WM_APP_START_INSTALL:
-      {
-	// Start the install thread.
-	do_install (GetInstance (), GetHWND ());
-	break;
-      }
-    case WM_APP_INSTALL_THREAD_COMPLETE:
-      {
-	// Install is complete and we want to go on to the postinstall.
-	Window::PostMessageNow (WM_APP_START_POSTINSTALL);
-	break;
-      }
-    case WM_APP_START_POSTINSTALL:
-      {
-	// Start the postinstall script thread.
-	do_postinstall (GetInstance (), GetHWND ());
-	break;
-      }
-    case WM_APP_POSTINSTALL_THREAD_COMPLETE:
-      {
-	GetOwner ()->SetActivePageByID (lParam);
-	break;
-      }
-    case WM_APP_START_SITE_INFO_DOWNLOAD:
-      {
-	do_download_site_info (GetInstance (), GetHWND ());
-	break;
-      }
-    case WM_APP_SITE_INFO_DOWNLOAD_COMPLETE:
-      {
-	GetOwner ()->SetActivePageByID (lParam);
-	break;
-      }
-    case WM_APP_START_SETUP_INI_DOWNLOAD:
-      {
-	do_ini (GetInstance (), GetHWND ());
-	break;
-      }
-    case WM_APP_SETUP_INI_DOWNLOAD_COMPLETE:
-      {
-	if (lParam)
-	  GetOwner ()->SetActivePageByID (IDD_CHOOSE);
-	else
-	  {
-	    if (g_source == IDC_SOURCE_LOCALDIR)
-	      {
-		// There was a setup.ini file (as found by do_fromcwd), but it
-		// had parse errors.  In unattended mode, don't retry even once,
-		// because we'll only loop forever.
-		if (unattended_mode)
-		  {
-		    Log (LOG_PLAIN)
-			<< "can't install from bad local package dir"
-			<< endLog;
-		    Logger ().setExitMsg (IDS_INSTALL_INCOMPLETE);
-		    Logger ().exit (1);
-		  }
-		GetOwner ()->SetActivePageByID (IDD_SOURCE);
-	      }
-	    else
-	      {
-		// Download failed, try another site; in unattended mode, retry
-		// the same site a few times in case it was a transient network
-		// glitch, but don't loop forever.
-		static int retries = 4;
-		if (unattended_mode && retries-- <= 0)
-		  {
-		    Log (LOG_PLAIN)
-			<< "download/verify error in unattended_mode: out of retries"
-			<< endLog;
-		    Logger ().setExitMsg (IDS_INSTALL_INCOMPLETE);
-		    Logger ().exit (1);
-		  }
-		GetOwner ()->SetActivePageByID (IDD_SITE);
-	      }
-	  }
-	break;
-      }
-    default:
-      {
-	// Not handled
-	return false;
-      }
+  switch (uMsg) {
+    case WM_APP_PREREQ_CHECK: {
+      // Start the prereq-check thread
+      do_prereq_check(GetInstance(), GetHWND());
+      break;
     }
+    case WM_APP_PREREQ_CHECK_THREAD_COMPLETE: {
+      GetOwner()->SetActivePageByID(lParam);
+      break;
+    }
+    case WM_APP_START_DOWNLOAD: {
+      // Start the package download thread.
+      do_download(GetInstance(), GetHWND());
+      break;
+    }
+    case WM_APP_DOWNLOAD_THREAD_COMPLETE: {
+      if (lParam == IDD_S_INSTALL) {
+        // Download is complete and we want to go on to the install.
+        Window::PostMessageNow(WM_APP_START_INSTALL);
+      } else if (lParam != 0) {
+        // Download either failed or completed in download-only mode.
+        GetOwner()->SetActivePageByID(lParam);
+      } else {
+        fatal("Unexpected fallthrough from the download thread", NO_ERROR);
+      }
+      break;
+    }
+    case WM_APP_START_INSTALL: {
+      // Start the install thread.
+      do_install(GetInstance(), GetHWND());
+      break;
+    }
+    case WM_APP_INSTALL_THREAD_COMPLETE: {
+      // Install is complete and we want to go on to the postinstall.
+      Window::PostMessageNow(WM_APP_START_POSTINSTALL);
+      break;
+    }
+    case WM_APP_START_POSTINSTALL: {
+      // Start the postinstall script thread.
+      do_postinstall(GetInstance(), GetHWND());
+      break;
+    }
+    case WM_APP_POSTINSTALL_THREAD_COMPLETE: {
+      GetOwner()->SetActivePageByID(lParam);
+      break;
+    }
+    case WM_APP_START_SITE_INFO_DOWNLOAD: {
+      do_download_site_info(GetInstance(), GetHWND());
+      break;
+    }
+    case WM_APP_SITE_INFO_DOWNLOAD_COMPLETE: {
+      GetOwner()->SetActivePageByID(lParam);
+      break;
+    }
+    case WM_APP_START_SETUP_INI_DOWNLOAD: {
+      do_ini(GetInstance(), GetHWND());
+      break;
+    }
+    case WM_APP_SETUP_INI_DOWNLOAD_COMPLETE: {
+      if (lParam)
+        GetOwner()->SetActivePageByID(IDD_CHOOSE);
+      else {
+        if (g_source == IDC_SOURCE_LOCALDIR) {
+          // There was a setup.ini file (as found by do_fromcwd), but it
+          // had parse errors.  In unattended mode, don't retry even once,
+          // because we'll only loop forever.
+          if (unattended_mode) {
+            Log(LOG_PLAIN) << "can't install from bad local package dir"
+                           << endLog;
+            Logger().setExitMsg(IDS_INSTALL_INCOMPLETE);
+            Logger().exit(1);
+          }
+          GetOwner()->SetActivePageByID(IDD_SOURCE);
+        } else {
+          // Download failed, try another site; in unattended mode, retry
+          // the same site a few times in case it was a transient network
+          // glitch, but don't loop forever.
+          static int retries = 4;
+          if (unattended_mode && retries-- <= 0) {
+            Log(LOG_PLAIN)
+                << "download/verify error in unattended_mode: out of retries"
+                << endLog;
+            Logger().setExitMsg(IDS_INSTALL_INCOMPLETE);
+            Logger().exit(1);
+          }
+          GetOwner()->SetActivePageByID(IDD_SITE);
+        }
+      }
+      break;
+    }
+    default: {
+      // Not handled
+      return false;
+    }
+  }
 
   return true;
-
 }

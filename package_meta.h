@@ -78,11 +78,10 @@ public:
   }
 
   std::string action_caption () const;
-  packageversion trustp (bool _default, trusts const t) const
+  packageversion trustp(bool _default, trusts const t) const 
   {
     /* If the user chose "test" and a "test" version is available, return it. */
-    if (t == TRUST_TEST && exp)
-      return exp;
+    if (t == TRUST_TEST && exp) return exp;
     /* Are we looking for the default version and does the installed version
        have a higher version number than the "curr" package?  This means the
        user has installed a "test" version, or built her own version newer
@@ -90,16 +89,14 @@ public:
        "test" if a "test" version is available and the version number is higher,
        or we stick to "installed" if not.  This reflects the behaviour of
        `yum update' on Fedora. */
-    if (_default && curr && installed
-	&& packageversion::compareVersions (curr, installed) < 0)
-      {
-	if (exp && packageversion::compareVersions (installed, exp) < 0)
-	  return exp;
-	return installed;
-      }
+    if (_default && curr && installed &&
+        packageversion::compareVersions(curr, installed) < 0) {
+      if (exp && packageversion::compareVersions(installed, exp) < 0)
+        return exp;
+      return installed;
+    }
     /* Otherwise, if a "curr" version exists, return "curr". */
-    if (curr)
-      return curr;
+    if (curr) return curr;
     /* Otherwise return the installed version. */
     return installed;
   }

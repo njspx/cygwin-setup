@@ -39,14 +39,12 @@ static BoolOption LocalOption (false, 'L', "local-install", "Install packages fr
 static int rb[] =
   { IDC_SOURCE_NETINST, IDC_SOURCE_DOWNLOAD, IDC_SOURCE_LOCALDIR, 0 };
 
-static void
-load_dialog(HWND h)
+static void load_dialog(HWND h)
 {
   rbset(h, rb, g_source);
 }
 
-static void
-save_dialog(HWND h)
+static void save_dialog(HWND h)
 {
   g_source = rbget(h, rb);
   /* We mustn't construct any packagedb objects until after the root
@@ -58,19 +56,17 @@ save_dialog(HWND h)
       g_source == IDC_SOURCE_DOWNLOAD ? PackageDB_Download : PackageDB_Install;
 }
 
-static BOOL
-dialog_cmd(HWND h, int id, HWND hwndctl, UINT code)
+static BOOL dialog_cmd(HWND h, int id, HWND hwndctl, UINT code) 
 {
-  switch (id)
-  {
-  case IDC_SOURCE_DOWNLOAD:
-  case IDC_SOURCE_NETINST:
-  case IDC_SOURCE_LOCALDIR:
-    save_dialog(h);
-    break;
+  switch (id) {
+    case IDC_SOURCE_DOWNLOAD:
+    case IDC_SOURCE_NETINST:
+    case IDC_SOURCE_LOCALDIR:
+      save_dialog(h);
+      break;
 
-  default:
-    break;
+    default:
+      break;
   }
   return 0;
 }
@@ -96,9 +92,10 @@ void SourcePage::OnActivate()
 
   load_dialog(GetHWND());
   // Check to see if any radio buttons are selected. If not, select a default.
-  if (SendMessage(GetDlgItem(IDC_SOURCE_DOWNLOAD), BM_GETCHECK, 0, 0) != BST_CHECKED && SendMessage(GetDlgItem(IDC_SOURCE_LOCALDIR), BM_GETCHECK, 0, 0) != BST_CHECKED)
-    SendMessage(GetDlgItem(IDC_SOURCE_NETINST), BM_SETCHECK,
-                BST_CHECKED, 0);
+  if (SendMessage(GetDlgItem(IDC_SOURCE_DOWNLOAD), BM_GETCHECK, 0, 0) != BST_CHECKED
+    && SendMessage(GetDlgItem(IDC_SOURCE_LOCALDIR), BM_GETCHECK, 0, 0) != BST_CHECKED
+    && SendMessage(GetDlgItem(IDC_SOURCE_NETINST), BM_GETCHECK, 0, 0) != BST_CHECKED)
+    SendMessage(GetDlgItem(g_source), BM_SETCHECK, BST_CHECKED, 0);
 }
 
 long SourcePage::OnNext()

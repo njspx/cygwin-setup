@@ -21,7 +21,7 @@
 
 #include <algorithm>
 
-extern ThreeBarProgressPage Progress;
+extern ThreeBarProgressPage g_Progress;
 
 // Sizing information.
 static ControlAdjuster::ControlInfo ConfirmControlsInfo[] = {
@@ -137,19 +137,15 @@ ConfirmPage::OnNext ()
   return whatNext();
 }
 
-long
-ConfirmPage::whatNext ()
+long ConfirmPage::whatNext() 
 {
-  if (g_source == IDC_SOURCE_LOCALDIR)
-    {
-      // Next, install
-      Progress.SetActivateTask (WM_APP_START_INSTALL);
-    }
-  else
-    {
-      // Next, start download from internet
-      Progress.SetActivateTask (WM_APP_START_DOWNLOAD);
-    }
+  if (g_source == IDC_SOURCE_LOCALDIR) {
+    // Next, install
+    g_Progress.SetActivateTask(WM_APP_START_INSTALL);
+  } else {
+    // Next, start download from internet
+    g_Progress.SetActivateTask(WM_APP_START_DOWNLOAD);
+  }
   return IDD_INSTATUS;
 }
 

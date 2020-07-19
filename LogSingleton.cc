@@ -37,16 +37,14 @@ LogSingleton::LogSingleton(std::streambuf* aStream) : std::ios (aStream), std::o
 }
 LogSingleton::~LogSingleton(){}
 
-LogSingleton &
-LogSingleton::GetInstance()
+LogSingleton &LogSingleton::GetInstance()
 {
   if (!theInstance)
     throw new std::invalid_argument ("No instance has been set!");
   return *theInstance;
 }
 
-void
-LogSingleton::SetInstance(LogSingleton &newInstance)
+void LogSingleton::SetInstance(LogSingleton &newInstance)
 {
   theInstance = &newInstance;
 }
@@ -77,8 +75,7 @@ private:
 #endif
 
 // Log adapators for printf-style output
-void
-LogBabblePrintf(const char *fmt, ...)
+void LogBabblePrintf(const char *fmt, ...)
 {
   int len;
   char buf[8192];
@@ -90,8 +87,7 @@ LogBabblePrintf(const char *fmt, ...)
   Log (LOG_BABBLE) << buf << endLog;
 }
 
-void
-LogPlainPrintf(const char *fmt, ...)
+void LogPlainPrintf(const char *fmt, ...)
 {
   int len;
   char buf[8192];

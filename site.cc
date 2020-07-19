@@ -41,7 +41,7 @@
 #include "Exception.h"
 #include "String++.h"
 
-extern ThreeBarProgressPage Progress;
+extern ThreeBarProgressPage g_Progress;
 
 /*
   What to do if dropped mirrors are selected.
@@ -420,28 +420,26 @@ do_download_site_info_thread (void *p)
   HWND h;
   context = (HANDLE *) p;
 
-  try
-  {
-    hinst = (HINSTANCE) (context[0]);
-    h = (HWND) (context[1]);
+  try {
+    hinst = (HINSTANCE)(context[0]);
+    h = (HWND)(context[1]);
     static bool downloaded = false;
-    if (!downloaded && get_site_list (hinst, h))
-    {
+    if (!downloaded && get_site_list(hinst, h)) {
       // Error: Couldn't download the site info.
       // Go back to the Net setup page.
-      mbox (h, TEXT ("Can't get list of download sites.\n")
-          TEXT("Make sure your network settings are correct and try again."),
-          NULL, MB_OK);
+      mbox(h,
+           TEXT("Can't get list of download sites.\n") TEXT(
+               "Make sure your network settings are correct and try again."),
+           NULL, MB_OK);
 
       // Tell the progress page that we're done downloading
-      Progress.PostMessageNow (WM_APP_SITE_INFO_DOWNLOAD_COMPLETE, 0, IDD_NET);
-    }
-    else 
-    {
+      g_Progress.PostMessageNow(WM_APP_SITE_INFO_DOWNLOAD_COMPLETE, 0, IDD_NET);
+    } else {
       downloaded = true;
       // Everything worked, go to the site select page
       // Tell the progress page that we're done downloading
-      Progress.PostMessageNow (WM_APP_SITE_INFO_DOWNLOAD_COMPLETE, 0, IDD_SITE);
+      g_Progress.PostMessageNow(WM_APP_SITE_INFO_DOWNLOAD_COMPLETE, 0,
+                                IDD_SITE);
     }
   }
   TOPLEVEL_CATCH((HWND) context[1], "site");
@@ -567,23 +565,21 @@ bool SitePage::Create ()
 long
 SitePage::OnNext ()
 {
-  HWND h = GetHWND ();
+  HWND h = GetHWND();
   int cache_action = CACHE_ACCEPT_NOWARN;
 
-  save_dialog (h);
+  save_dialog(h);
 
-  if (cache_is_usable && !(cache_action = check_dropped_mirrors (h)))
-    return -1;
+  if (cache_is_usable && !(cache_action = check_dropped_mirrors(h))) return -1;
 
-  if (cache_needs_writing)
-    save_cache_file (cache_action);
+  if (cache_needs_writing) save_cache_file(cache_action);
 
   // Log all the selected URLs from the list.
-  for (SiteList::const_iterator n = site_list.begin ();
-       n != site_list.end (); ++n)
-    Log (LOG_PLAIN) << "site: " << n->url << endLog;
+  for (SiteList::const_iterator n = site_list.begin(); n != site_list.end();
+       ++n)
+    Log(LOG_PLAIN) << "site: " << n->url << endLog;
 
-  Progress.SetActivateTask (WM_APP_START_SETUP_INI_DOWNLOAD);
+  g_Progress.SetActivateTask(WM_APP_START_SETUP_INI_DOWNLOAD);
   return IDD_INSTATUS;
 
   return 0;

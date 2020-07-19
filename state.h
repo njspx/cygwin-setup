@@ -33,7 +33,7 @@
 
 enum attend_mode { attended = 0, unattended, chooseronly };
 extern enum attend_mode unattended_mode;
-extern bool rebootneeded;
+extern bool g_rebootneeded;
 
 extern int g_source;
 

@@ -50,17 +50,13 @@ io_stream::registerProvider (IOStreamProvider &theProvider,
     longestPrefix = urlPrefix.size();
 }
 
-static IOStreamProvider const *
-findProvider (const std::string& path)
+static IOStreamProvider const *findProvider(const std::string &path) 
 {
-  if (path.size() < longestPrefix)
-    return NULL;
+  if (path.size() < longestPrefix) return NULL;
   for (providersType::const_iterator i = providers->begin();
-       i != providers->end(); ++i)
-    {
-      if (!casecompare(path, i->first, i->first.size()))
-       	return i->second;
-    }
+       i != providers->end(); ++i) {
+    if (!casecompare(path, i->first, i->first.size())) return i->second;
+  }
   return NULL;
 }
 
@@ -207,25 +203,20 @@ io_stream::move (const std::string& from, const std::string& to)
   		      &to.c_str()[top->key.size()]);
 }
 
-char *
-io_stream::gets (char *buffer, size_t length)
+char * io_stream::gets (char *buffer, size_t length)
 {
   char *pos = buffer;
   size_t count = 0;
-  while (count + 1 < length && read (pos, 1) == 1)
-    {
-      count++;
-      pos++;
-      if (*(pos - 1) == '\n')
-	{
-	  --pos; /* end of line, remove from buffer */
-	  if (pos > buffer && *(pos - 1) == '\r')
-	    --pos;
-	  break;
-	}
+  while (count + 1 < length && read(pos, 1) == 1) {
+    count++;
+    pos++;
+    if (*(pos - 1) == '\n') {
+      --pos; /* end of line, remove from buffer */
+      if (pos > buffer && *(pos - 1) == '\r') --pos;
+      break;
     }
-  if (count == 0 || error ())
-    /* EOF when no chars found, or an error */
+  }
+  if (count == 0 || error()) /* EOF when no chars found, or an error */
     return NULL;
   *pos = '\0';
   return buffer;

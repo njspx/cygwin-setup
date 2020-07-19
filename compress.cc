@@ -31,56 +31,44 @@
 
 #define longest_magic 18 /* ZStandard longest frame header (magic is only 4 bytes) */
 
-io_stream *
-compress::decompress (io_stream * original)
+io_stream *compress::decompress(io_stream *original) 
 {
-  if (!original)
-    return NULL;
+  if (!original) return NULL;
+  
   char magic[longest_magic];
-  if (original->peek (magic, longest_magic) > 0)
-    {
-      if (memcmp (magic, "\037\213", 2) == 0)
-	{
-	  /* tar */
-	  compress_gz *rv = new compress_gz (original);
-	  if (!rv->error ())
-	    return rv;
-	  /* else */
-	  rv->release_original();
-	  delete rv;
-	  return NULL;
-	}
-      else if (compress_zstd::is_zstd (magic, 18))
-	{
-	  compress_zstd *rv = new compress_zstd (original);
-	  if (!rv->error ())
-	    return rv;
-	  /* else */
-	  rv->release_original();
-	  delete rv;
-	  return NULL;
-	}
-      else if (memcmp (magic, "BZh", 3) == 0)
-	{
-	  compress_bz *rv = new compress_bz (original);
-	  if (!rv->error ())
-	    return rv;
-	  /* else */
-	  rv->release_original();
-	  delete rv;
-	  return NULL;
-	}
-      else if (compress_xz::is_xz_or_lzma (magic, 14))
-	{
-	  compress_xz *rv = new compress_xz (original);
-	  if (!rv->error ())
-	    return rv;
-	  /* else */
-	  rv->release_original();
-	  delete rv;
-	  return NULL;
-	}
+
+  if (original->peek(magic, longest_magic) > 0) {
+    if (memcmp(magic, "\037\213", 2) == 0) {
+      /* tar */
+      compress_gz *rv = new compress_gz(original);
+      if (!rv->error()) return rv;
+      /* else */
+      rv->release_original();
+      delete rv;
+      return NULL;
+    } else if (compress_zstd::is_zstd(magic, 18)) {
+      compress_zstd *rv = new compress_zstd(original);
+      if (!rv->error()) return rv;
+      /* else */
+      rv->release_original();
+      delete rv;
+      return NULL;
+    } else if (memcmp(magic, "BZh", 3) == 0) {
+      compress_bz *rv = new compress_bz(original);
+      if (!rv->error()) return rv;
+      /* else */
+      rv->release_original();
+      delete rv;
+      return NULL;
+    } else if (compress_xz::is_xz_or_lzma(magic, 14)) {
+      compress_xz *rv = new compress_xz(original);
+      if (!rv->error()) return rv;
+      /* else */
+      rv->release_original();
+      delete rv;
+      return NULL;
     }
+  }
   return NULL;
 }
 
